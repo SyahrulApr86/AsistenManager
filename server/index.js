@@ -50,24 +50,24 @@ app.post('/api/login', async (req, res) => {
     const csrfmiddlewaretoken = csrfMatch[1];
 
     const loginResponse = await axios.post(
-        `${SIASISTEN_URL}/login/`,
-        new URLSearchParams({
-          csrfmiddlewaretoken,
-          username,
-          password,
-          next: ''
-        }).toString(),
-        {
-          headers: {
-            ...COMMON_HEADERS,
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Cookie": `csrftoken=${csrftoken}`,
-            "Referer": `${SIASISTEN_URL}/login/`,
-            "Origin": SIASISTEN_URL
-          },
-          maxRedirects: 0,
-          validateStatus: status => status >= 200 && status < 400
-        }
+      `${SIASISTEN_URL}/login/`,
+      new URLSearchParams({
+        csrfmiddlewaretoken,
+        username,
+        password,
+        next: ''
+      }).toString(),
+      {
+        headers: {
+          ...COMMON_HEADERS,
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Cookie": `csrftoken=${csrftoken}`,
+          "Referer": `${SIASISTEN_URL}/login/`,
+          "Origin": SIASISTEN_URL
+        },
+        maxRedirects: 0,
+        validateStatus: status => status >= 200 && status < 400
+      }
     );
 
     if (loginResponse.status === 302) {
@@ -220,17 +220,17 @@ app.post('/api/logs/create/:createLogId', async (req, res) => {
     }, {});
 
     const response = await axios.post(
-        `${SIASISTEN_URL}/log/create/${createLogId}/`,
-        req.body,
-        {
-          headers: {
-            ...COMMON_HEADERS,
-            Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-            'X-CSRFToken': req.headers['x-csrftoken'],
-            'Content-Type': 'application/x-www-form-urlencoded',
-            Referer: `${SIASISTEN_URL}/log/create/${createLogId}/`,
-          },
-        }
+      `${SIASISTEN_URL}/log/create/${createLogId}/`,
+      req.body,
+      {
+        headers: {
+          ...COMMON_HEADERS,
+          Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+          'X-CSRFToken': req.headers['x-csrftoken'],
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Referer: `${SIASISTEN_URL}/log/create/${createLogId}/`,
+        },
+      }
     );
 
     res.json({ success: true });
@@ -250,17 +250,17 @@ app.put('/api/logs/update/:logId', async (req, res) => {
     }, {});
 
     const response = await axios.post(
-        `${SIASISTEN_URL}/log/update/${logId}/`,
-        req.body,
-        {
-          headers: {
-            ...COMMON_HEADERS,
-            Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-            'X-CSRFToken': req.headers['x-csrftoken'],
-            'Content-Type': 'application/x-www-form-urlencoded',
-            Referer: `${SIASISTEN_URL}/log/update/${logId}/`,
-          },
-        }
+      `${SIASISTEN_URL}/log/update/${logId}/`,
+      req.body,
+      {
+        headers: {
+          ...COMMON_HEADERS,
+          Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+          'X-CSRFToken': req.headers['x-csrftoken'],
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Referer: `${SIASISTEN_URL}/log/update/${logId}/`,
+        },
+      }
     );
 
     res.json({ success: true });
@@ -280,17 +280,17 @@ app.delete('/api/logs/delete/:logId', async (req, res) => {
     }, {});
 
     const response = await axios.post(
-        `${SIASISTEN_URL}/log/delete/${logId}/`,
-        { csrfmiddlewaretoken: req.headers['x-csrftoken'] },
-        {
-          headers: {
-            ...COMMON_HEADERS,
-            Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-            'X-CSRFToken': req.headers['x-csrftoken'],
-            'Content-Type': 'application/x-www-form-urlencoded',
-            Referer: `${SIASISTEN_URL}/log/delete/${logId}/`,
-          },
-        }
+      `${SIASISTEN_URL}/log/delete/${logId}/`,
+      { csrfmiddlewaretoken: req.headers['x-csrftoken'] },
+      {
+        headers: {
+          ...COMMON_HEADERS,
+          Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+          'X-CSRFToken': req.headers['x-csrftoken'],
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Referer: `${SIASISTEN_URL}/log/delete/${logId}/`,
+        },
+      }
     );
 
     res.json({ success: true });

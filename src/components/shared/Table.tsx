@@ -5,7 +5,7 @@ interface Column {
   header: string;
   key: string;
   width?: string;
-  render?: (value: any) => React.ReactNode;
+  render?: (value: any, row?: any) => React.ReactNode;
   centerHeader?: boolean;
   centerData?: boolean;
 }
@@ -55,7 +55,7 @@ export default function Table({ columns, data, isLoading = false, emptyMessage =
                             key={column.key}
                             className={`table-cell ${column.centerData ? 'text-center' : ''}`}
                         >
-                          {column.render ? column.render(row[column.key]) : row[column.key]}
+                          {column.render ? column.render(row[column.key], row) : row[column.key]}
                         </td>
                     ))}
                   </tr>
