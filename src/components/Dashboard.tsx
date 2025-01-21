@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Home, Calendar, DollarSign, User, LogOut, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Lowongan } from '../types/log';
 import toast from 'react-hot-toast';
+import { getLowongan } from '../lib/api';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -14,13 +14,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchVacancies = async () => {
+      if (!user?.sessionId || !user?.csrfToken) {
+        toast.error('Session not found');
+        return;
+      }
+
+      console.log('Session:', user.sessionId);
+        console.log('CSRF Token:', user.csrfToken);
+
       try {
-        const response = await axios.get('http://localhost:3001/api/lowongan', {
-          headers: {
-            'Cookie': `sessionid=${user?.sessionId}; csrftoken=${user?.csrfToken}`
-          },
-        });
-        setVacancies(response.data);
+        const data = await getLowongan(user.sessionId, user.csrfToken);
+        setVacancies(data);
       } catch (error) {
         toast.error('Failed to fetch vacancies');
         console.error('Error fetching vacancies:', error);

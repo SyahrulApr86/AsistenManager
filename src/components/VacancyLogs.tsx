@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Home, Calendar, DollarSign, User, LogOut, ArrowLeft } from 'lucide-react';
 import { Log } from '../types/log';
-import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getLogs } from '../lib/api';
 
 export default function VacancyLogs() {
   const { id } = useParams<{ id: string }>();
@@ -15,13 +15,14 @@ export default function VacancyLogs() {
 
   useEffect(() => {
     const fetchLogs = async () => {
+      if (!user?.sessionId || !user?.csrfToken || !id) {
+        toast.error('Session or vacancy ID not found');
+        return;
+      }
+
       try {
-        const response = await axios.get(`http://localhost:3001/api/logs/${id}`, {
-          headers: {
-            'Cookie': `sessionid=${user?.sessionId}; csrftoken=${user?.csrfToken}`
-          }
-        });
-        setLogs(response.data);
+        const data = await getLogs(user.sessionId, user.csrfToken, id);
+        setLogs(data);
       } catch (error) {
         toast.error('Failed to fetch logs');
         console.error('Error fetching logs:', error);
@@ -30,9 +31,7 @@ export default function VacancyLogs() {
       }
     };
 
-    if (id) {
-      fetchLogs();
-    }
+    fetchLogs();
   }, [id, user]);
 
   const handleLogout = async () => {
