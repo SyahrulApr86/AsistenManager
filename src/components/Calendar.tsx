@@ -1,3 +1,4 @@
+// Calendar.tsx
 import { useEffect, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -8,6 +9,7 @@ import { Log } from '../types/log';
 interface CalendarProps {
     logs: Log[];
     onEventClick?: (log: Log) => void;
+    className?: string;
 }
 
 interface CalendarEvent {
@@ -26,7 +28,7 @@ interface CalendarEvent {
     };
 }
 
-export default function Calendar({ logs, onEventClick }: CalendarProps) {
+export default function Calendar({ logs, onEventClick, className }: CalendarProps) {
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [courseColors, setCourseColors] = useState<Record<string, string>>({});
 
@@ -36,8 +38,6 @@ export default function Calendar({ logs, onEventClick }: CalendarProps) {
         for (let i = 0; i < str.length; i++) {
             hash = str.charCodeAt(i) + ((hash << 5) - hash);
         }
-
-        // Generate HSL color with fixed saturation and lightness
         const h = Math.abs(hash) % 360;
         return `hsl(${h}, 70%, 65%)`;
     };
@@ -77,14 +77,14 @@ export default function Calendar({ logs, onEventClick }: CalendarProps) {
     }, [logs]);
 
     return (
-        <div className="calendar-container">
+        <div className={`calendar-container ${className}`}>
             <FullCalendar
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="timeGridWeek"
                 headerToolbar={{
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    right: 'timeGridWeek,timeGridDay'
                 }}
                 events={events}
                 eventClick={info => {
@@ -94,10 +94,9 @@ export default function Calendar({ logs, onEventClick }: CalendarProps) {
                     }
                 }}
                 eventDidMount={info => {
-                    // Add tooltip
                     info.el.title = `${info.event.extendedProps.course}\n${info.event.extendedProps.description}`;
                 }}
-                height="auto"
+                height={600} // Set a fixed height
                 allDaySlot={false}
                 slotMinTime="07:00:00"
                 slotMaxTime="22:00:00"
@@ -108,19 +107,18 @@ export default function Calendar({ logs, onEventClick }: CalendarProps) {
                 dayMaxEvents={true}
             />
 
-            {/* Course Legend */}
-            <div className="mt-6 p-4 bg-white rounded-lg shadow">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Course Legend</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {/* Compact Course Legend */}
+            <div className="mt-4 p-2 bg-white rounded-lg shadow text-sm">
+                <div className="grid grid-cols-2 gap-2">
                     {Object.entries(courseColors).map(([course, color]) => (
-                        <div key={course} className="flex items-center space-x-2">
+                        <div key={course} className="flex items-center gap-1">
                             <div
-                                className="w-4 h-4 rounded"
+                                className="w-3 h-3 rounded"
                                 style={{ backgroundColor: color }}
                             />
-                            <span className="text-sm text-gray-600 truncate" title={course}>
-                {course}
-              </span>
+                            <span className="text-xs text-gray-600 truncate" title={course}>
+                                {course}
+                            </span>
                         </div>
                     ))}
                 </div>

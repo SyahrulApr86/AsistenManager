@@ -16,12 +16,8 @@ interface LogFormProps {
   onSave: () => void;
 }
 
-// Generate hours array (00-23)
 const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-// Minutes array (00, 15, 30, 45)
 const minutes = ['00', '15', '30', '45'];
-
-// Days of the week
 const daysOfWeek = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
 export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps) {
@@ -30,7 +26,6 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [showCalendarView, setShowCalendarView] = useState(false);
   const [calendarLogs, setCalendarLogs] = useState<Log[]>([]);
   const [formData, setFormData] = useState<LogFormData>({
     kategori_log: '',
@@ -223,7 +218,7 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
 
   return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl">
           <div className="flex items-center justify-between p-6 border-b">
             <h3 className="text-xl font-semibold text-gray-900">
               {log ? 'Edit Log' : 'Create New Log'}
@@ -236,220 +231,210 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <div className="flex items-center justify-between mb-4">
-              <button
-                  type="button"
-                  onClick={() => setShowCalendarView(!showCalendarView)}
-                  className="btn-secondary"
-              >
-                <CalendarIcon className="h-4 w-4 mr-1" />
-                {showCalendarView ? 'Hide Calendar' : 'Show Calendar'}
-              </button>
-            </div>
+          <div className="flex">
+            {/* Form Section */}
+            <div className="w-1/2 border-r">
+              <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Category
+                    </label>
+                    <select
+                        value={formData.kategori_log}
+                        onChange={(e) => setFormData({ ...formData, kategori_log: e.target.value })}
+                        className="input-field"
+                        required
+                    >
+                      <option value="">Select a category</option>
+                      {Object.entries(LOG_CATEGORIES).map(([key, value]) => (
+                          <option key={key} value={key}>{value}</option>
+                      ))}
+                    </select>
+                  </div>
 
-            {showCalendarView && (
-                <div className="mb-6">
-                  <Calendar
-                      logs={calendarLogs}
-                      onEventClick={(selectedLog) => {
-                        if (selectedLog) {
-                          const [day, month, year] = selectedLog.Tanggal.split('-');
-                          const [startHour, startMinute] = selectedLog['Jam Mulai'].split(':');
-                          const [endHour, endMinute] = selectedLog['Jam Selesai'].split(':');
-
-                          setFormData({
-                            ...formData,
-                            tanggal: { day, month, year },
-                            waktu_mulai: { hour: startHour, minute: startMinute },
-                            waktu_selesai: { hour: endHour, minute: endMinute }
-                          });
-                        }
-                      }}
-                  />
-                </div>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <select
-                    value={formData.kategori_log}
-                    onChange={(e) => setFormData({ ...formData, kategori_log: e.target.value })}
-                    className="input-field"
-                    required
-                >
-                  <option value="">Select a category</option>
-                  {Object.entries(LOG_CATEGORIES).map(([key, value]) => (
-                      <option key={key} value={key}>{value}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                    value={formData.deskripsi}
-                    onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                    className="input-field min-h-[100px]"
-                    required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date
-                  </label>
-                  <div className="relative">
-                    <input
-                        type="text"
-                        value={selectedDate ? selectedDate.toLocaleDateString() : ''}
-                        readOnly
-                        onClick={() => setShowCalendar(!showCalendar)}
-                        className="input-field pr-10 cursor-pointer"
-                        placeholder="Select date"
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                        value={formData.deskripsi}
+                        onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                        className="input-field min-h-[100px]"
                         required
                     />
-                    <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
 
-                  {showCalendar && (
-                      <div className="absolute z-10 mt-1 bg-white rounded-lg shadow-lg border p-4">
-                        <div className="flex items-center justify-between mb-4">
-                          <button
-                              type="button"
-                              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
-                              className="p-1 hover:bg-gray-100 rounded"
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date
+                      </label>
+                      <div className="relative">
+                        <input
+                            type="text"
+                            value={selectedDate ? selectedDate.toLocaleDateString() : ''}
+                            readOnly
+                            onClick={() => setShowCalendar(!showCalendar)}
+                            className="input-field pr-10 cursor-pointer"
+                            placeholder="Select date"
+                            required
+                        />
+                        <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      </div>
+
+                      {showCalendar && (
+                          <div className="absolute z-10 mt-1 bg-white rounded-lg shadow-lg border p-4">
+                            <div className="flex items-center justify-between mb-4">
+                              <button
+                                  type="button"
+                                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+                                  className="p-1 hover:bg-gray-100 rounded"
+                              >
+                                ←
+                              </button>
+                              <span className="font-medium">
+                            {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                          </span>
+                              <button
+                                  type="button"
+                                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+                                  className="p-1 hover:bg-gray-100 rounded"
+                              >
+                                →
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-7 gap-1">
+                              {generateCalendarDays()}
+                            </div>
+                          </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Start Time
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <select
+                              value={formData.waktu_mulai.hour}
+                              onChange={(e) => setFormData({
+                                ...formData,
+                                waktu_mulai: { ...formData.waktu_mulai, hour: e.target.value }
+                              })}
+                              className="input-field"
+                              required
                           >
-                            ←
-                          </button>
-                          <span className="font-medium">
-                        {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                      </span>
-                          <button
-                              type="button"
-                              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
-                              className="p-1 hover:bg-gray-100 rounded"
+                            {hours.map(hour => (
+                                <option key={hour} value={hour}>{hour}</option>
+                            ))}
+                          </select>
+                          <select
+                              value={formData.waktu_mulai.minute}
+                              onChange={(e) => setFormData({
+                                ...formData,
+                                waktu_mulai: { ...formData.waktu_mulai, minute: e.target.value }
+                              })}
+                              className="input-field"
+                              required
                           >
-                            →
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-7 gap-1 mb-2">
-                          {daysOfWeek.map(day => (
-                              <div key={day} className="h-8 w-8 flex items-center justify-center text-xs text-gray-500">
-                                {day}
-                              </div>
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-7 gap-1">
-                          {generateCalendarDays()}
+                            {minutes.map(minute => (
+                                <option key={minute} value={minute}>{minute}</option>
+                            ))}
+                          </select>
                         </div>
                       </div>
-                  )}
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Time
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <select
-                        value={formData.waktu_mulai.hour}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          waktu_mulai: { ...formData.waktu_mulai, hour: e.target.value }
-                        })}
-                        className="input-field"
-                        required
-                    >
-                      {hours.map(hour => (
-                          <option key={hour} value={hour}>{hour}</option>
-                      ))}
-                    </select>
-                    <select
-                        value={formData.waktu_mulai.minute}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          waktu_mulai: { ...formData.waktu_mulai, minute: e.target.value }
-                        })}
-                        className="input-field"
-                        required
-                    >
-                      {minutes.map(minute => (
-                          <option key={minute} value={minute}>{minute}</option>
-                      ))}
-                    </select>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          End Time
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <select
+                              value={formData.waktu_selesai.hour}
+                              onChange={(e) => setFormData({
+                                ...formData,
+                                waktu_selesai: { ...formData.waktu_selesai, hour: e.target.value }
+                              })}
+                              className="input-field"
+                              required
+                          >
+                            {hours.map(hour => (
+                                <option key={hour} value={hour}>{hour}</option>
+                            ))}
+                          </select>
+                          <select
+                              value={formData.waktu_selesai.minute}
+                              onChange={(e) => setFormData({
+                                ...formData,
+                                waktu_selesai: { ...formData.waktu_selesai, minute: e.target.value }
+                              })}
+                              className="input-field"
+                              required
+                          >
+                            {minutes.map(minute => (
+                                <option key={minute} value={minute}>{minute}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Time
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <select
-                        value={formData.waktu_selesai.hour}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          waktu_selesai: { ...formData.waktu_selesai, hour: e.target.value }
-                        })}
-                        className="input-field"
-                        required
-                    >
-                      {hours.map(hour => (
-                          <option key={hour} value={hour}>{hour}</option>
-                      ))}
-                    </select>
-                    <select
-                        value={formData.waktu_selesai.minute}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          waktu_selesai: { ...formData.waktu_selesai, minute: e.target.value }
-                        })}
-                        className="input-field"
-                        required
-                    >
-                      {minutes.map(minute => (
-                          <option key={minute} value={minute}>{minute}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="flex justify-end space-x-4 pt-4 border-t">
+                  <button
+                      type="button"
+                      onClick={onClose}
+                      className="btn-secondary"
+                      disabled={loading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                      type="submit"
+                      className="btn-primary"
+                      disabled={loading}
+                  >
+                    {loading ? (
+                        <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                          {log ? 'Updating...' : 'Creating...'}
+                    </span>
+                    ) : (
+                        log ? 'Update Log' : 'Create Log'
+                    )}
+                  </button>
                 </div>
-              </div>
+              </form>
             </div>
 
-            <div className="flex justify-end space-x-4 pt-4 border-t">
-              <button
-                  type="button"
-                  onClick={onClose}
-                  className="btn-secondary"
-                  disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={loading}
-              >
-                {loading ? (
-                    <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                      {log ? 'Updating...' : 'Creating...'} </span>
-                ) : (
-                    log ? 'Update Log' : 'Create Log'
-                )}
-              </button>
+            {/* Calendar Section */}
+            <div className="w-1/2 p-4">
+              <Calendar
+                  logs={calendarLogs}
+                  onEventClick={(selectedLog) => {
+                    if (selectedLog) {
+                      const [day, month, year] = selectedLog.Tanggal.split('-');
+                      const [startHour, startMinute] = selectedLog['Jam Mulai'].split(':');
+                      const [endHour, endMinute] = selectedLog['Jam Selesai'].split(':');
+
+                      setFormData({
+                        ...formData,
+                        tanggal: { day, month, year },
+                        waktu_mulai: { hour: startHour, minute: startMinute },
+                        waktu_selesai: { hour: endHour, minute: endMinute }
+                      });
+                    }
+                  }}
+                  className="h-full"
+              />
             </div>
-          </form>
+          </div>
         </div>
       </div>
   );
