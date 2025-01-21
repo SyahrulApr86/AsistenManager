@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Lowongan, Log, LogFormData } from '../types/log';
+import { Lowongan, Log, LogFormData, FinanceData } from '../types/log';
 
 const API_URL = 'http://localhost:3001/api';
 
@@ -83,4 +83,31 @@ export async function deleteLog(
   if (!response.data.success) {
     throw new Error(response.data.error || 'Failed to delete log');
   }
+}
+
+export async function getFinanceData(
+    sessionId: string,
+    csrfToken: string,
+    year: number,
+    month: number
+): Promise<FinanceData[]> {
+  document.cookie = `sessionid=${sessionId}; path=/`;
+  document.cookie = `csrftoken=${csrfToken}; path=/`;
+
+  const response = await api.post('/finance', {
+    year,
+    month
+  });
+  return response.data;
+}
+
+export async function getAllFinanceData(
+    sessionId: string,
+    csrfToken: string
+): Promise<FinanceData[]> {
+  document.cookie = `sessionid=${sessionId}; path=/`;
+  document.cookie = `csrftoken=${csrfToken}; path=/`;
+
+  const response = await api.get('/finance/all');
+  return response.data;
 }

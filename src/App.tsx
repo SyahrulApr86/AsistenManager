@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import VacancyLogs from './components/VacancyLogs';
 import AllLogs from './components/AllLogs';
 import CalendarView from "./components/CalendarView.tsx";
+import FinanceView from "./components/FinanceView.tsx";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -48,6 +49,12 @@ function App() {
               <CalendarView />
             </PrivateRoute>
           } />
+          <Route path="/finance" element={
+            <PrivateRoute>
+              <FinanceView />
+            </PrivateRoute>
+          } />
+
         </Routes>
         <Toaster position="top-right" />
       </AuthProvider>

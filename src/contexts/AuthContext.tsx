@@ -24,6 +24,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Validate the stored user data
         if (parsedUser?.username && parsedUser?.sessionId && parsedUser?.csrfToken) {
           setUser(parsedUser);
+          // Set username cookie
+          document.cookie = `username=${encodeURIComponent(parsedUser.username)}; path=/`;
         } else {
           // If stored data is invalid, clear it
           localStorage.removeItem('user');
@@ -49,11 +51,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const userData = response.data.user;
-      
+
       // Validate user data before storing
       if (!userData?.username || !userData?.sessionId || !userData?.csrfToken) {
         throw new Error('Invalid user data received');
       }
+
+      // Set username cookie
+      document.cookie = `username=${encodeURIComponent(userData.username)}; path=/`;
 
       setUser(userData);
       // Store user data in localStorage
@@ -68,14 +73,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     setUser(null);
-    // Clear user data from localStorage
+    // Clear user data from localStorage and cookies
     localStorage.removeItem('user');
+    document.cookie = 'username=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
-      {!loading && children}
-    </AuthContext.Provider>
+      <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+        {!loading && children}
+      </AuthContext.Provider>
   );
 }
 

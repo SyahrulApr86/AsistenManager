@@ -318,6 +318,165 @@ app.delete('/api/logs/delete/:logId', async (req, res) => {
   }
 });
 
+app.post('/api/finance', async (req, res) => {
+  try {
+    const { year, month } = req.body;
+    const sessionid = req.headers.cookie?.match(/sessionid=([^;]+)/)?.[1];
+    const csrftoken = req.headers.cookie?.match(/csrftoken=([^;]+)/)?.[1];
+    const username = req.headers.cookie?.match(/username=([^;]+)/)?.[1];
+
+    if (!sessionid || !csrftoken || !username) {
+      throw new Error('Session cookies not found');
+    }
+
+    const keuangan_url = "https://siasisten.cs.ui.ac.id/keuangan/listPembayaranPerAsisten";
+    const response = await axios.post(
+        keuangan_url,
+        new URLSearchParams({
+          csrfmiddlewaretoken: csrftoken,
+          tahun: year.toString(),
+          bulan: month.toString(),
+          username: decodeURIComponent(username),
+          statusid: "-1"
+        }).toString(),
+        {
+          headers: {
+            ...COMMON_HEADERS,
+            "Host": "siasisten.cs.ui.ac.id",
+            "Cookie": `csrftoken=${csrftoken}; sessionid=${sessionid}; sc_is_visitor_unique=rx12339556.1727594531.5DDD9564D24F4F8716FA6F31A7C077FC.2.2.2.2.2.2.2.2.2`,
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cache-Control": "max-age=0",
+            "Origin": "https://siasisten.cs.ui.ac.id",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-User": "?1",
+            "Sec-Fetch-Dest": "document",
+            "Referer": keuangan_url
+          },
+          maxRedirects: 0,
+          validateStatus: status => status >= 200 && status < 400
+        }
+    );
+
+    const root = parse(response.data);
+    const tables = root.querySelectorAll('table');
+    const data = [];
+
+    for (const table of tables) {
+      const headers = table.querySelectorAll('th').map(th => th.text.trim());
+      if (headers.includes('NPM') && headers.includes('Asisten')) {
+        const rows = table.querySelectorAll('tr');
+        for (let i = 1; i < rows.length; i++) {
+          const cols = rows[i].querySelectorAll('td');
+          if (cols.length === 8) {
+            data.push({
+              NPM: cols[0].text.trim(),
+              Asisten: cols[1].text.trim(),
+              Bulan: cols[2].text.trim(),
+              Mata_Kuliah: cols[3].text.trim(),
+              Jumlah_Jam: cols[4].text.trim(),
+              Honor_Per_Jam: cols[5].text.trim(),
+              Jumlah_Pembayaran: cols[6].text.trim(),
+              Status: cols[7].text.trim()
+            });
+          }
+        }
+      }
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error in /api/finance:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/finance/all', async (req, res) => {
+  try {
+    const sessionid = req.headers.cookie?.match(/sessionid=([^;]+)/)?.[1];
+    const csrftoken = req.headers.cookie?.match(/csrftoken=([^;]+)/)?.[1];
+    const username = req.headers.cookie?.match(/username=([^;]+)/)?.[1];
+
+    if (!sessionid || !csrftoken || !username) {
+      throw new Error('Session cookies not found');
+    }
+
+    const startYear = 2021;
+    const currentDate = new Date();
+    const endYear = currentDate.getFullYear();
+    const allData = [];
+
+    for (let year = startYear; year <= endYear; year++) {
+      const endMonth = year === currentDate.getFullYear() ? currentDate.getMonth() + 1 : 12;
+      const startMonth = year === startYear ? 6 : 1;
+
+      for (let month = startMonth; month <= endMonth; month++) {
+        const keuangan_url = "https://siasisten.cs.ui.ac.id/keuangan/listPembayaranPerAsisten";
+        const response = await axios.post(
+            keuangan_url,
+            new URLSearchParams({
+              csrfmiddlewaretoken: csrftoken,
+              tahun: year.toString(),
+              bulan: month.toString(),
+              username: decodeURIComponent(username),
+              statusid: '-1'
+            }).toString(),
+            {
+              headers: {
+                ...COMMON_HEADERS,
+                "Host": "siasisten.cs.ui.ac.id",
+                "Cookie": `csrftoken=${csrftoken}; sessionid=${sessionid}; sc_is_visitor_unique=rx12339556.1727594531.5DDD9564D24F4F8716FA6F31A7C077FC.2.2.2.2.2.2.2.2.2`,
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cache-Control": "max-age=0",
+                "Origin": "https://siasisten.cs.ui.ac.id",
+                "Sec-Fetch-Site": "same-origin",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-User": "?1",
+                "Sec-Fetch-Dest": "document",
+                "Referer": keuangan_url
+              },
+              maxRedirects: 0,
+              validateStatus: status => status >= 200 && status < 400
+            }
+        );
+
+        const root = parse(response.data);
+        const tables = root.querySelectorAll('table');
+
+        for (const table of tables) {
+          const headers = table.querySelectorAll('th').map(th => th.text.trim());
+          if (headers.includes('NPM') && headers.includes('Asisten')) {
+            const rows = table.querySelectorAll('tr');
+            for (let i = 1; i < rows.length; i++) {
+              const cols = rows[i].querySelectorAll('td');
+              if (cols.length === 8) {
+                allData.push({
+                  NPM: cols[0].text.trim(),
+                  Asisten: cols[1].text.trim(),
+                  Bulan: cols[2].text.trim(),
+                  Mata_Kuliah: cols[3].text.trim(),
+                  Jumlah_Jam: cols[4].text.trim(),
+                  Honor_Per_Jam: cols[5].text.trim(),
+                  Jumlah_Pembayaran: cols[6].text.trim(),
+                  Status: cols[7].text.trim()
+                });
+              }
+            }
+          }
+        }
+
+        // Add a small delay to avoid overwhelming the server
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    res.json(allData);
+  } catch (error) {
+    console.error('Error in /api/finance/all:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

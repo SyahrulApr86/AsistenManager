@@ -58,3 +58,23 @@ export const LOG_CATEGORIES = {
   "14": "Penunjang",
   "15": "Input Data"
 } as const;
+
+export interface FinanceData {
+  NPM: string;
+  Asisten: string;
+  Bulan: string;
+  Mata_Kuliah: string;
+  Jumlah_Jam: string;
+  Honor_Per_Jam: string;
+  Jumlah_Pembayaran: string;
+  Status: string;
+}
+
+export interface FinanceStats {
+  totalAmount: number;
+  statusTotals: Record<string, number>;
+  monthlyTotals: Record<string, number>;
+  averageMonthly: number;
+  maxMonthly: number;
+  minMonthly: number;
+}
