@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { KeyRound, User } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 export default function LoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,6 +18,7 @@ export default function LoginForm() {
     try {
       await signIn(username, password);
       toast.success('Successfully logged in!');
+      navigate('/dashboard');
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
