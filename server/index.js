@@ -8,7 +8,8 @@ const port = 3001;
 
 app.use(cors({
   origin: 'http://localhost:5173', // Vite dev server
-  credentials: true
+  credentials: true,
+  exposedHeaders: ['set-cookie']
 }));
 app.use(express.json());
 
@@ -35,8 +36,11 @@ app.post('/api/login', async (req, res) => {
       headers: COMMON_HEADERS
     });
 
+    console.log('Login page response status:', loginPageResponse.status);
+
     // Get cookies from response headers
     const cookies = loginPageResponse.headers['set-cookie'] || [];
+    console.log('Initial cookies:', cookies);
 
     const csrfCookie = cookies.find(cookie => cookie.includes('csrftoken'));
     if (!csrfCookie) {
@@ -77,6 +81,8 @@ app.post('/api/login', async (req, res) => {
       }
     );
 
+    console.log('Login response status:', loginResponse.status);
+    console.log('Login response headers:', loginResponse.headers);
 
     if (loginResponse.status === 302) {
       const sessionCookies = loginResponse.headers['set-cookie'];
@@ -111,18 +117,14 @@ app.post('/api/login', async (req, res) => {
 // Get lowongan endpoint
 app.get('/api/lowongan', async (req, res) => {
   try {
-    const cookiesHeader = req.headers.cookie;
-    if (!cookiesHeader) {
-      throw new Error('No cookies found in request headers');
+    const sessionid = req.headers.cookie?.match(/sessionid=([^;]+)/)?.[1];
+    const csrftoken = req.headers.cookie?.match(/csrftoken=([^;]+)/)?.[1];
+
+    if (!sessionid || !csrftoken) {
+      throw new Error('Session cookies not found');
     }
 
-    const { sessionid, csrftoken } = cookiesHeader.split(';').reduce((acc, curr) => {
-      const [key, value] = curr.trim().split('=');
-      acc[key] = value;
-      return acc;
-    }, {});
-
-    const { semester, tahunAjaran, latest } = req.query;
+    console.log('Fetching lowongan with cookies:', { sessionid, csrftoken });
 
     const response = await axios.get(`${SIASISTEN_URL}/log/listLowonganAst`, {
       headers: {
@@ -147,39 +149,11 @@ app.get('/api/lowongan', async (req, res) => {
       };
     });
 
-    // Filter logic
-    let filteredLowongan = lowongan;
-
-    if (latest === 'true' && lowongan.length > 0) {
-      // Filter by latest period
-      const latestSemester = lowongan[0].Semester;
-      const latestTahunAjaran = lowongan[0]['Tahun Ajaran'];
-      filteredLowongan = lowongan.filter(
-          entry =>
-              entry.Semester === latestSemester &&
-              entry['Tahun Ajaran'] === latestTahunAjaran
-      );
-    } else if (tahunAjaran) {
-      // Filter by tahunAjaran (optional semester)
-      filteredLowongan = lowongan.filter(
-          entry => entry['Tahun Ajaran'] === tahunAjaran
-      );
-      if (semester) {
-        // Further filter by semester if provided
-        filteredLowongan = filteredLowongan.filter(
-            entry => entry.Semester === semester
-        );
-      }
-    } else if (semester && !tahunAjaran) {
-      throw new Error(
-          'Filter by semester requires tahunAjaran to be specified'
-      );
-    }
-
-    res.json(filteredLowongan);
+    console.log('Lowongan data:', lowongan);
+    res.json(lowongan);
   } catch (error) {
-    console.error('Error fetching lowongan:', error.message);
-    res.status(500).json({ error: 'Failed to fetch lowongan', details: error.message });
+    console.error('Error in /api/lowongan:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

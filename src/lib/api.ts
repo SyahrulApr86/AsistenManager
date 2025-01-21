@@ -6,16 +6,23 @@ const API_URL = 'http://localhost:3001/api';
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  }
 });
 
 export async function getLowongan(sessionId: string, csrfToken: string): Promise<Lowongan[]> {
+  console.log('Making request with cookies:', { sessionId, csrfToken });
+  
   const response = await api.get('/lowongan', {
     headers: {
       Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,
       'X-CSRFToken': csrfToken
     }
   });
+  
+  console.log('Response data:', response.data);
   return response.data;
 }
 

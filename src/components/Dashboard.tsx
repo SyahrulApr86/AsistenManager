@@ -14,25 +14,28 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user?.sessionId || !user?.csrfToken) {
+      console.log('No session data found:', user);
       toast.error('Session not found');
       return;
     }
 
+    console.log('Fetching vacancies with session:', {
+      sessionId: user.sessionId,
+      csrfToken: user.csrfToken
+    });
+
     getLowongan(user.sessionId, user.csrfToken)
-        .then((data) => {
-          setVacancies(data);
-          console.log("Session ID: ", user.sessionId);
-          console.log("CSRF Token: ", user.csrfToken);
-          console.log("Data: ");
-          console.log(data);
-        })
-        .catch((error) => {
-          toast.error('Failed to fetch vacancies');
-          console.error('Error fetching vacancies:', error);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+      .then((data) => {
+        console.log('Received vacancies:', data);
+        setVacancies(data);
+      })
+      .catch((error) => {
+        console.error('Error fetching vacancies:', error);
+        toast.error(error.message || 'Failed to fetch vacancies');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [user]);
 
   const handleLogout = async () => {
