@@ -13,11 +13,13 @@ const api = axios.create({
 });
 
 export async function getLowongan(sessionId: string, csrfToken: string): Promise<Lowongan[]> {
-
+  console.log('Making request with cookies:', { sessionId, csrfToken });
+  
   document.cookie = `sessionid=${sessionId}; path=/`;
   document.cookie = `csrftoken=${csrfToken}; path=/`;
   
   const response = await api.get('/lowongan');
+  console.log('Response data:', response.data);
   return response.data;
 }
 
