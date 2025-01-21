@@ -1,4 +1,3 @@
-// Calendar.tsx
 import { useEffect, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -84,7 +83,7 @@ export default function Calendar({ logs, onEventClick, className }: CalendarProp
                 headerToolbar={{
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'timeGridWeek,timeGridDay'
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 }}
                 events={events}
                 eventClick={info => {
@@ -96,7 +95,7 @@ export default function Calendar({ logs, onEventClick, className }: CalendarProp
                 eventDidMount={info => {
                     info.el.title = `${info.event.extendedProps.course}\n${info.event.extendedProps.description}`;
                 }}
-                height={600} // Set a fixed height
+                height={600}
                 allDaySlot={false}
                 slotMinTime="07:00:00"
                 slotMaxTime="22:00:00"
@@ -105,6 +104,17 @@ export default function Calendar({ logs, onEventClick, className }: CalendarProp
                 expandRows={true}
                 stickyHeaderDates={true}
                 dayMaxEvents={true}
+                views={{
+                    dayGridMonth: {
+                        titleFormat: { year: 'numeric', month: 'long' }
+                    },
+                    timeGridWeek: {
+                        titleFormat: { year: 'numeric', month: 'short', day: '2-digit' }
+                    },
+                    timeGridDay: {
+                        titleFormat: { year: 'numeric', month: 'short', day: '2-digit' }
+                    }
+                }}
             />
 
             {/* Compact Course Legend */}

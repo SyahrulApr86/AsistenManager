@@ -10,6 +10,7 @@ import Footer from './shared/Footer';
 import Table from './shared/Table';
 import StatsCard from './shared/StatsCard';
 import Calendar from './Calendar';
+import { Calendar as Calendar2 } from 'lucide-react';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -121,25 +122,37 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <StatsCard title="Total Positions" value={allVacancies.length} icon={BookOpen} />
-              <StatsCard title="Active Positions" value={activeVacancies.length} icon={CheckCircle} iconColor="text-green-600" />
-              <StatsCard title="Past Positions" value={inactiveVacancies.length} icon={History} iconColor="text-gray-600" />
+              <StatsCard title="Total Positions" value={allVacancies.length} icon={BookOpen}/>
+              <StatsCard title="Active Positions" value={activeVacancies.length} icon={CheckCircle}
+                         iconColor="text-green-600"/>
+              <StatsCard title="Past Positions" value={inactiveVacancies.length} icon={History}
+                         iconColor="text-gray-600"/>
+              <button
+                  onClick={() => navigate('/all-logs')}
+                  className="card p-6 hover:shadow-xl transition-shadow duration-300 flex items-center justify-between"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-600">View All Logs</p>
+                  <p className="text-2xl font-bold text-indigo-600">Combined</p>
+                </div>
+                <ClipboardList className="h-8 w-8 text-indigo-600"/>
+              </button>
               <button
                   onClick={() => navigate('/calendar')}
                   className="card p-6 hover:shadow-xl transition-shadow duration-300 flex items-center justify-between"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-600">View All Logs</p>
-                  <p className="text-2xl font-bold text-indigo-600">Calendar</p>
+                  <p className="text-sm font-medium text-gray-600">View Calendar</p>
+                  <p className="text-2xl font-bold text-indigo-600">Schedule</p>
                 </div>
-                <ClipboardList className="h-8 w-8 text-indigo-600" />
+                <Calendar2 className="h-8 w-8 text-indigo-600"/>
               </button>
             </div>
 
             <div className="card p-8 mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <CheckCircle className="h-5 w-5 text-green-600"/>
                   <h3 className="text-xl font-semibold text-gray-900">Active Positions</h3>
                 </div>
                 <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
@@ -157,7 +170,7 @@ export default function Dashboard() {
             <div className="card p-8 mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-2">
-                  <CalendarIcon className="h-5 w-5 text-indigo-600" />
+                  <CalendarIcon className="h-5 w-5 text-indigo-600"/>
                   <h3 className="text-xl font-semibold text-gray-900">Calendar View</h3>
                 </div>
                 <button
