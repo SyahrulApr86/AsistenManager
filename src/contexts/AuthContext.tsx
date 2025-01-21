@@ -19,7 +19,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        // Validate the stored user data
+        if (parsedUser?.username && parsedUser?.sessionId && parsedUser?.csrfToken) {
+          setUser(parsedUser);
+        } else {
+          // If stored data is invalid, clear it
+          localStorage.removeItem('user');
+        }
+      } catch (error) {
+        // If there's an error parsing the stored data, clear it
+        console.error('Error parsing stored user data:', error);
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
@@ -36,6 +49,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const userData = response.data.user;
+
+      // Validate user data before storing
+      if (!userData?.username || !userData?.sessionId || !userData?.csrfToken) {
+        throw new Error('Invalid user data received');
+      }
+
       setUser(userData);
       // Store user data in localStorage
       localStorage.setItem('user', JSON.stringify(userData));
@@ -54,9 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
-      {children}
-    </AuthContext.Provider>
+      <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+        {!loading && children}
+      </AuthContext.Provider>
   );
 }
 
