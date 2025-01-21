@@ -124,6 +124,8 @@ app.get('/api/lowongan', async (req, res) => {
       return acc;
     }, {});
 
+    const { semester, tahunAjaran, latest } = req.query;
+
     const response = await axios.get(`${SIASISTEN_URL}/log/listLowonganAst`, {
       headers: {
         ...COMMON_HEADERS,
@@ -147,10 +149,39 @@ app.get('/api/lowongan', async (req, res) => {
       };
     });
 
-    res.json(lowongan);
+    // Filter logic
+    let filteredLowongan = lowongan;
+
+    if (latest === 'true' && lowongan.length > 0) {
+      // Filter by latest period
+      const latestSemester = lowongan[0].Semester;
+      const latestTahunAjaran = lowongan[0]['Tahun Ajaran'];
+      filteredLowongan = lowongan.filter(
+          entry =>
+              entry.Semester === latestSemester &&
+              entry['Tahun Ajaran'] === latestTahunAjaran
+      );
+    } else if (tahunAjaran) {
+      // Filter by tahunAjaran (optional semester)
+      filteredLowongan = lowongan.filter(
+          entry => entry['Tahun Ajaran'] === tahunAjaran
+      );
+      if (semester) {
+        // Further filter by semester if provided
+        filteredLowongan = filteredLowongan.filter(
+            entry => entry.Semester === semester
+        );
+      }
+    } else if (semester && !tahunAjaran) {
+      throw new Error(
+          'Filter by semester requires tahunAjaran to be specified'
+      );
+    }
+
+    res.json(filteredLowongan);
   } catch (error) {
     console.error('Error fetching lowongan:', error.message);
-    res.status(500).json({ error: 'Failed to fetch lowongan' });
+    res.status(500).json({ error: 'Failed to fetch lowongan', details: error.message });
   }
 });
 
