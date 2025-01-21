@@ -148,14 +148,14 @@ export default function VacancyLogs() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead>
                   <tr>
-                    <th scope="col" className="table-header w-12">#</th>
-                    <th scope="col" className="table-header w-24">Date</th>
-                    <th scope="col" className="table-header w-24">Start</th>
-                    <th scope="col" className="table-header w-24">End</th>
-                    <th scope="col" className="table-header w-24">Duration</th>
-                    <th scope="col" className="table-header w-32">Category</th>
-                    <th scope="col" className="table-header">Description</th>
-                    <th scope="col" className="table-header w-28">Status</th>
+                    <th scope="col" className="table-header w-12 text-center">#</th>
+                    <th scope="col" className="table-header w-24 text-center">Date</th>
+                    <th scope="col" className="table-header w-24 text-center">Start</th>
+                    <th scope="col" className="table-header w-24 text-center">End</th>
+                    <th scope="col" className="table-header w-24 text-center">Duration</th>
+                    <th scope="col" className="table-header w-32 text-center">Category</th>
+                    <th scope="col" className="table-header text-center">Description</th>
+                    <th scope="col" className="table-header w-28 text-center">Status</th>
                   </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -184,23 +184,23 @@ export default function VacancyLogs() {
                           <tr key={log.LogID} className="table-row">
                             <td className="table-cell text-center">{log.No}</td>
                             <td className="table-cell">{log.Tanggal}</td>
-                            <td className="table-cell">{log['Jam Mulai']}</td>
-                            <td className="table-cell">{log['Jam Selesai']}</td>
-                            <td className="table-cell">{log['Durasi (Menit)']}</td>
-                            <td className="table-cell">
-            <span className="badge badge-indigo">
+                            <td className="table-cell text-center">{log['Jam Mulai']}</td>
+                            <td className="table-cell text-center">{log['Jam Selesai']}</td>
+                            <td className="table-cell text-center">{log['Durasi (Menit)']}</td>
+                            <td className="table-cell text-center"> {/* Centered */}
+                              <span className="badge badge-indigo">
               {log.Kategori}
             </span>
                             </td>
                             <td className="table-cell-wrap">
                               {log['Deskripsi Tugas']}
                             </td>
-                            <td className="table-cell">
-            <span className={`badge ${
-                log.Status.toLowerCase().includes('disetujui')
-                    ? 'badge-green'
-                    : 'badge-yellow'
-            }`}>
+                            <td className="table-cell text-center"> {/* Centered */}
+                              <span className={`badge ${
+                                  log.Status.toLowerCase().includes('disetujui')
+                                      ? 'badge-green'
+                                      : 'badge-yellow'
+                              }`}>
               {log.Status}
             </span>
                             </td>
