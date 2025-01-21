@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, CheckCircle, History, Eye, ClipboardList, Calendar as CalendarIcon } from 'lucide-react';
+import { BookOpen, CheckCircle, History, Eye, ClipboardList, Calendar as CalendarIcon, X } from 'lucide-react';
 import { Lowongan, Log } from '../types/log';
 import toast from 'react-hot-toast';
 import { getLowongan, getLogs } from '../lib/api';
@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showCalendar, setShowCalendar] = useState(false);
   const [allLogs, setAllLogs] = useState<Log[]>([]);
+  const [selectedLog, setSelectedLog] = useState<Log | null>(null);
 
   useEffect(() => {
     if (!user?.sessionId || !user?.csrfToken) {
@@ -170,7 +171,7 @@ export default function Dashboard() {
             <div className="card p-8 mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-2">
-                  <CalendarIcon className="h-5 w-5 text-indigo-600"/>
+                  <CalendarIcon className="h-5 w-5 text-indigo-600" />
                   <h3 className="text-xl font-semibold text-gray-900">Calendar View</h3>
                 </div>
                 <button
@@ -184,11 +185,7 @@ export default function Dashboard() {
               {showCalendar && (
                   <Calendar
                       logs={allLogs}
-                      onEventClick={(log) => {
-                        if (log) {
-                          navigate(`/vacancy/${log.LogID}`);
-                        }
-                      }}
+                      onEventClick={setSelectedLog}
                   />
               )}
             </div>
@@ -213,6 +210,80 @@ export default function Dashboard() {
           </div>
         </div>
         <Footer />
+
+        {/* Log Details Modal */}
+        {selectedLog && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <div className="flex items-center justify-between p-6 border-b">
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Log Details
+                  </h3>
+                  <button
+                      onClick={() => setSelectedLog(null)}
+                      className="text-gray-400 hover:text-gray-500 transition-colors"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Course</label>
+                    <p className="text-gray-900">{selectedLog['Mata Kuliah']}</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Date & Time</label>
+                    <p className="text-gray-900">
+                      {selectedLog.Tanggal} ({selectedLog['Jam Mulai']} - {selectedLog['Jam Selesai']})
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Duration</label>
+                    <p className="text-gray-900">{selectedLog['Durasi (Menit)']} minutes</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Category</label>
+                    <p className="text-gray-900">{selectedLog.Kategori}</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Description</label>
+                    <p className="text-gray-900">{selectedLog['Deskripsi Tugas']}</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Status</label>
+                    <span className={`inline-block mt-1 px-2 py-1 text-sm rounded-full ${
+                        selectedLog.Status.toLowerCase().includes('disetujui')
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {selectedLog.Status}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-4 p-6 border-t">
+                  <button
+                      onClick={() => setSelectedLog(null)}
+                      className="btn-secondary"
+                  >
+                    Close
+                  </button>
+                  <button
+                      onClick={() => navigate(`/vacancy/${selectedLog.LogID}`)}
+                      className="btn-primary"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+        )}
       </div>
   );
 }

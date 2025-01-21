@@ -18,7 +18,6 @@ interface LogFormProps {
 
 const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
 const minutes = ['00', '15', '30', '45'];
-const daysOfWeek = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
 export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps) {
   const { user } = useAuth();
@@ -27,6 +26,7 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [calendarLogs, setCalendarLogs] = useState<Log[]>([]);
+  const [selectedCalendarLog, setSelectedCalendarLog] = useState<Log | null>(null);
   const [formData, setFormData] = useState<LogFormData>({
     kategori_log: '',
     deskripsi: '',
@@ -265,7 +265,6 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
           </div>
 
           <div className="flex">
-            {/* Form Section */}
             <div className="w-1/2 border-r">
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 <div className="space-y-4">
@@ -446,28 +445,103 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
               </form>
             </div>
 
-            {/* Calendar Section */}
             <div className="w-1/2 p-4">
               <Calendar
                   logs={calendarLogs}
-                  onEventClick={(selectedLog) => {
-                    if (selectedLog) {
-                      const [day, month, year] = selectedLog.Tanggal.split('-');
-                      const [startHour, startMinute] = selectedLog['Jam Mulai'].split(':');
-                      const [endHour, endMinute] = selectedLog['Jam Selesai'].split(':');
-
-                      setFormData({
-                        ...formData,
-                        tanggal: { day, month, year },
-                        waktu_mulai: { hour: startHour, minute: startMinute },
-                        waktu_selesai: { hour: endHour, minute: endMinute }
-                      });
+                  onEventClick={(log) => {
+                    if (log) {
+                      setSelectedCalendarLog(log);
                     }
                   }}
                   className="h-full"
               />
             </div>
           </div>
+
+          {selectedCalendarLog && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+                <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                  <div className="flex items-center justify-between p-6 border-b">
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      Log Details
+                    </h3>
+                    <button
+                        onClick={() => setSelectedCalendarLog(null)}
+                        className="text-gray-400 hover:text-gray-500 transition-colors"
+                    >
+                      <X className="h-6 w-6" />
+                    </button>
+                  </div>
+
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Course</label>
+                      <p className="text-gray-900">{selectedCalendarLog['Mata Kuliah']}</p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Date & Time</label>
+                      <p className="text-gray-900">
+                        {selectedCalendarLog.Tanggal} ({selectedCalendarLog['Jam Mulai']} - {selectedCalendarLog['Jam Selesai']})
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Duration</label>
+                      <p className="text-gray-900">{selectedCalendarLog['Durasi (Menit)']} minutes</p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Category</label>
+                      <p className="text-gray-900">{selectedCalendarLog.Kategori}</p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Description</label>
+                      <p className="text-gray-900">{selectedCalendarLog['Deskripsi Tugas']}</p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Status</label>
+                      <span className={`inline-block mt-1 px-2 py-1 text-sm rounded-full ${
+                          selectedCalendarLog.Status.toLowerCase().includes('disetujui')
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                    {selectedCalendarLog.Status}
+                  </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-4 p-6 border-t">
+                    <button
+                        onClick={() => setSelectedCalendarLog(null)}
+                        className="btn-secondary"
+                    >
+                      Close
+                    </button>
+                    <button
+                        onClick={() => {
+                          const [day, month, year] = selectedCalendarLog.Tanggal.split('-');
+                          const [startHour, startMinute] = selectedCalendarLog['Jam Mulai'].split(':');
+                          const [endHour, endMinute] = selectedCalendarLog['Jam Selesai'].split(':');
+
+                          setFormData({
+                            ...formData,
+                            tanggal: { day, month, year },
+                            waktu_mulai: { hour: startHour, minute: startMinute },
+                            waktu_selesai: { hour: endHour, minute: endMinute }
+                          });
+                          setSelectedCalendarLog(null);
+                        }}
+                        className="btn-primary"
+                    >
+                      Use This Time
+                    </button>
+                  </div>
+                </div>
+              </div>
+          )}
         </div>
       </div>
   );
