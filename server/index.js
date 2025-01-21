@@ -210,93 +210,109 @@ function calculateDuration(start, end) {
   return durationMinutes >= 0 ? durationMinutes : (24 * 60) + durationMinutes;
 }
 
+
 app.post('/api/logs/create/:createLogId', async (req, res) => {
   try {
     const { createLogId } = req.params;
-    const { sessionid, csrftoken } = req.headers.cookie.split(';').reduce((acc, curr) => {
-      const [key, value] = curr.trim().split('=');
-      acc[key] = value;
-      return acc;
-    }, {});
+    const { sessionId, csrfToken, ...formData } = req.body;
+
+    const data = new URLSearchParams();
+    data.append('csrfmiddlewaretoken', csrfToken);
+    data.append('kategori_log', formData.kategori_log);
+    data.append('deskripsi', formData.deskripsi);
+    data.append('tanggal_day', formData.tanggal.day);
+    data.append('tanggal_month', formData.tanggal.month);
+    data.append('tanggal_year', formData.tanggal.year);
+    data.append('waktu_mulai_hour', formData.waktu_mulai.hour);
+    data.append('waktu_mulai_minute', formData.waktu_mulai.minute);
+    data.append('waktu_selesai_hour', formData.waktu_selesai.hour);
+    data.append('waktu_selesai_minute', formData.waktu_selesai.minute);
 
     const response = await axios.post(
-      `${SIASISTEN_URL}/log/create/${createLogId}/`,
-      req.body,
-      {
-        headers: {
-          ...COMMON_HEADERS,
-          Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-          'X-CSRFToken': req.headers['x-csrftoken'],
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Referer: `${SIASISTEN_URL}/log/create/${createLogId}/`,
-        },
-      }
+        `${SIASISTEN_URL}/log/create/${createLogId}/`,
+        data.toString(),
+        {
+          headers: {
+            ...COMMON_HEADERS,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': `csrftoken=${csrfToken}; sessionid=${sessionId}`,
+            'X-CSRFToken': csrfToken,
+            'Referer': `${SIASISTEN_URL}/log/create/${createLogId}/`
+          }
+        }
     );
 
     res.json({ success: true });
   } catch (error) {
     console.error('Error creating log:', error);
-    res.status(500).json({ error: 'Failed to create log' });
+    res.status(500).json({ success: false, error: 'Failed to create log' });
   }
 });
 
 app.put('/api/logs/update/:logId', async (req, res) => {
   try {
     const { logId } = req.params;
-    const { sessionid, csrftoken } = req.headers.cookie.split(';').reduce((acc, curr) => {
-      const [key, value] = curr.trim().split('=');
-      acc[key] = value;
-      return acc;
-    }, {});
+    const { sessionId, csrfToken, ...formData } = req.body;
+
+    const data = new URLSearchParams();
+    data.append('csrfmiddlewaretoken', csrfToken);
+    data.append('kategori_log', formData.kategori_log);
+    data.append('deskripsi', formData.deskripsi);
+    data.append('tanggal_day', formData.tanggal.day);
+    data.append('tanggal_month', formData.tanggal.month);
+    data.append('tanggal_year', formData.tanggal.year);
+    data.append('waktu_mulai_hour', formData.waktu_mulai.hour);
+    data.append('waktu_mulai_minute', formData.waktu_mulai.minute);
+    data.append('waktu_selesai_hour', formData.waktu_selesai.hour);
+    data.append('waktu_selesai_minute', formData.waktu_selesai.minute);
 
     const response = await axios.post(
-      `${SIASISTEN_URL}/log/update/${logId}/`,
-      req.body,
-      {
-        headers: {
-          ...COMMON_HEADERS,
-          Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-          'X-CSRFToken': req.headers['x-csrftoken'],
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Referer: `${SIASISTEN_URL}/log/update/${logId}/`,
-        },
-      }
+        `${SIASISTEN_URL}/log/update/${logId}/`,
+        data.toString(),
+        {
+          headers: {
+            ...COMMON_HEADERS,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': `csrftoken=${csrfToken}; sessionid=${sessionId}`,
+            'X-CSRFToken': csrfToken,
+            'Referer': `${SIASISTEN_URL}/log/update/${logId}/`
+          }
+        }
     );
 
     res.json({ success: true });
   } catch (error) {
     console.error('Error updating log:', error);
-    res.status(500).json({ error: 'Failed to update log' });
+    res.status(500).json({ success: false, error: 'Failed to update log' });
   }
 });
 
 app.delete('/api/logs/delete/:logId', async (req, res) => {
   try {
     const { logId } = req.params;
-    const { sessionid, csrftoken } = req.headers.cookie.split(';').reduce((acc, curr) => {
-      const [key, value] = curr.trim().split('=');
-      acc[key] = value;
-      return acc;
-    }, {});
+    const { sessionId, csrfToken } = req.body;
+
+    const data = new URLSearchParams();
+    data.append('csrfmiddlewaretoken', csrfToken);
 
     const response = await axios.post(
-      `${SIASISTEN_URL}/log/delete/${logId}/`,
-      { csrfmiddlewaretoken: req.headers['x-csrftoken'] },
-      {
-        headers: {
-          ...COMMON_HEADERS,
-          Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-          'X-CSRFToken': req.headers['x-csrftoken'],
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Referer: `${SIASISTEN_URL}/log/delete/${logId}/`,
-        },
-      }
+        `${SIASISTEN_URL}/log/delete/${logId}/`,
+        data.toString(),
+        {
+          headers: {
+            ...COMMON_HEADERS,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': `csrftoken=${csrfToken}; sessionid=${sessionId}`,
+            'X-CSRFToken': csrfToken,
+            'Referer': `${SIASISTEN_URL}/log/delete/${logId}/`
+          }
+        }
     );
 
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting log:', error);
-    res.status(500).json({ error: 'Failed to delete log' });
+    res.status(500).json({ success: false, error: 'Failed to delete log' });
   }
 });
 
