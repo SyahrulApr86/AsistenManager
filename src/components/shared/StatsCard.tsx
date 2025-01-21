@@ -1,10 +1,8 @@
-import { DivideIcon as LucideIcon } from 'lucide-react';
-
 interface StatsCardProps {
-  title: string;
-  value: string | number;
-  icon: typeof LucideIcon;
-  iconColor?: string;
+    title: string;
+    value: string | number;
+    icon: React.ElementType | (() => React.ReactNode);
+    iconColor?: string;
 }
 
 export default function StatsCard({ title, value, icon: Icon, iconColor = "text-indigo-600" }: StatsCardProps) {

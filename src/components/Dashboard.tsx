@@ -26,37 +26,37 @@ export default function Dashboard() {
     }
 
     getLowongan(user.sessionId, user.csrfToken)
-      .then((data) => {
-        setAllVacancies(data);
+        .then((data) => {
+          setAllVacancies(data);
 
-        if (data.length > 0) {
-          const sortedVacancies = [...data].sort((a, b) => {
-            const yearComparison = b['Tahun Ajaran'].localeCompare(a['Tahun Ajaran']);
-            if (yearComparison !== 0) return yearComparison;
-            return b.Semester.localeCompare(a.Semester);
-          });
+          if (data.length > 0) {
+            const sortedVacancies = [...data].sort((a, b) => {
+              const yearComparison = b['Tahun Ajaran'].localeCompare(a['Tahun Ajaran']);
+              if (yearComparison !== 0) return yearComparison;
+              return b.Semester.localeCompare(a.Semester);
+            });
 
-          const latestYear = sortedVacancies[0]['Tahun Ajaran'];
-          const latestSemester = sortedVacancies[0].Semester;
+            const latestYear = sortedVacancies[0]['Tahun Ajaran'];
+            const latestSemester = sortedVacancies[0].Semester;
 
-          const active = sortedVacancies.filter(
-            v => v['Tahun Ajaran'] === latestYear && v.Semester === latestSemester
-          );
-          const inactive = sortedVacancies.filter(
-            v => v['Tahun Ajaran'] !== latestYear || v.Semester !== latestSemester
-          );
+            const active = sortedVacancies.filter(
+                v => v['Tahun Ajaran'] === latestYear && v.Semester === latestSemester
+            );
+            const inactive = sortedVacancies.filter(
+                v => v['Tahun Ajaran'] !== latestYear || v.Semester !== latestSemester
+            );
 
-          setActiveVacancies(active);
-          setInactiveVacancies(inactive);
-        }
-      })
-      .catch((error) => {
-        console.error('Error fetching vacancies:', error);
-        toast.error(error.message || 'Failed to fetch vacancies');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+            setActiveVacancies(active);
+            setInactiveVacancies(inactive);
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching vacancies:', error);
+          toast.error(error.message || 'Failed to fetch vacancies');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
   }, [user]);
 
   const handleViewLogs = (logId: string) => {
@@ -64,90 +64,90 @@ export default function Dashboard() {
   };
 
   const columns = [
-    { header: '#', key: 'No', width: 'w-12' },
-    { header: 'Course', key: 'Mata Kuliah', render: (value: string) => (
-      <div className="table-cell-course">{value}</div>
-    )},
-    { header: 'Semester', key: 'Semester', width: 'w-24' },
-    { header: 'Year', key: 'Tahun Ajaran', width: 'w-28' },
-    { header: 'Lecturer', key: 'Dosen', render: (value: string) => (
-      <div className="lecturer-list">
-        {value.split(',').map((lecturer: string, index: number) => (
-          <span key={index} className="lecturer-item">{lecturer.trim()}</span>
-        ))}
-      </div>
-    )},
-    { header: 'Actions', key: 'LogID', width: 'w-28', render: (value: string) => (
-      <button onClick={() => handleViewLogs(value)} className="btn-primary py-1 px-3">
-        <Eye className="h-4 w-4 mr-1" />
-        View
-      </button>
-    )}
+    { header: '#', key: 'No', width: 'w-12', centerHeader: true, centerData: true },
+    { header: 'Course', key: 'Mata Kuliah', centerHeader: true, render: (value: string) => (
+          <div className="table-cell-course">{value}</div>
+      )},
+    { header: 'Semester', key: 'Semester', width: 'w-24', centerHeader: true, centerData: true },
+    { header: 'Year', key: 'Tahun Ajaran', width: 'w-28', centerHeader: true, centerData: true },
+    { header: 'Lecturer', key: 'Dosen', centerHeader: true, render: (value: string) => (
+          <div className="lecturer-list">
+            {value.split(',').map((lecturer: string, index: number) => (
+                <span key={index} className="lecturer-item">{lecturer.trim()}</span>
+            ))}
+          </div>
+      )},
+    { header: 'Actions', key: 'LogID', width: 'w-28', centerHeader: true, centerData: true, render: (value: string) => (
+          <button onClick={() => handleViewLogs(value)} className="btn-primary py-1 px-3">
+            <Eye className="h-4 w-4 mr-1" />
+            View
+          </button>
+      )}
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-50">
-      <Navbar />
-      <div className="pt-16 pb-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="card p-8 mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  Welcome back, {user?.username}!
-                </h2>
-                <p className="text-gray-600">
-                  Manage your teaching assistant positions
-                </p>
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-blue-50">
+        <Navbar />
+        <div className="flex-grow pt-16 pb-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="card p-8 mb-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                    Welcome back, {user?.username}!
+                  </h2>
+                  <p className="text-gray-600">
+                    Manage your teaching assistant positions
+                  </p>
+                </div>
+                <BookOpen className="h-12 w-12 text-indigo-600" />
               </div>
-              <BookOpen className="h-12 w-12 text-indigo-600" />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <StatsCard title="Total Positions" value={allVacancies.length} icon={BookOpen} />
-            <StatsCard title="Active Positions" value={activeVacancies.length} icon={CheckCircle} iconColor="text-green-600" />
-            <StatsCard title="Past Positions" value={inactiveVacancies.length} icon={History} iconColor="text-gray-600" />
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <StatsCard title="Total Positions" value={allVacancies.length} icon={BookOpen} />
+              <StatsCard title="Active Positions" value={activeVacancies.length} icon={CheckCircle} iconColor="text-green-600" />
+              <StatsCard title="Past Positions" value={inactiveVacancies.length} icon={History} iconColor="text-gray-600" />
+            </div>
 
-          <div className="card p-8 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <h3 className="text-xl font-semibold text-gray-900">Active Positions</h3>
-              </div>
-              <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+            <div className="card p-8 mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <h3 className="text-xl font-semibold text-gray-900">Active Positions</h3>
+                </div>
+                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
                 {activeVacancies.length} Active
               </span>
-            </div>
-            <Table
-              columns={columns}
-              data={activeVacancies}
-              isLoading={loading}
-              emptyMessage="No active positions found"
-            />
-          </div>
-
-          <div className="card p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-2">
-                <History className="h-5 w-5 text-gray-600" />
-                <h3 className="text-xl font-semibold text-gray-900">Past Positions</h3>
               </div>
-              <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
+              <Table
+                  columns={columns}
+                  data={activeVacancies}
+                  isLoading={loading}
+                  emptyMessage="No active positions found"
+              />
+            </div>
+
+            <div className="card p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-2">
+                  <History className="h-5 w-5 text-gray-600" />
+                  <h3 className="text-xl font-semibold text-gray-900">Past Positions</h3>
+                </div>
+                <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
                 {inactiveVacancies.length} Past
               </span>
+              </div>
+              <Table
+                  columns={columns}
+                  data={inactiveVacancies}
+                  isLoading={loading}
+                  emptyMessage="No past positions found"
+              />
             </div>
-            <Table
-              columns={columns}
-              data={inactiveVacancies}
-              isLoading={loading}
-              emptyMessage="No past positions found"
-            />
           </div>
         </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
   );
 }
