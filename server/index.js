@@ -176,9 +176,10 @@ app.get('/api/logs/:logId', async (req, res) => {
     const rows = root.querySelectorAll('table tr');
     const logs = rows.slice(1).map(row => {
       const cols = row.querySelectorAll('td');
-      const jamStr = cols[2].text.trim();
-      const [jamMulai, jamSelesai] = jamStr.split('-').map(t => t.trim());
-      const durasi = calculateDuration(jamMulai, jamSelesai);
+      const jamStr = cols[2].text.trim(); // Jam Mulai - Jam Selesai + Deskripsi tambahan
+      const [jamRange] = jamStr.split('\n'); // Hanya ambil bagian waktu
+      const [jamMulai, jamSelesai] = jamRange.split('-').map(t => t.trim()); // Pisah Jam Mulai dan Jam Selesai
+      const durasi = calculateDuration(jamMulai, jamSelesai); // Hitung durasi menit
 
       return {
         No: cols[0].text.trim(),
@@ -215,8 +216,12 @@ function formatDate(dateStr) {
 function calculateDuration(start, end) {
   const [startHour, startMin] = start.split(':').map(Number);
   const [endHour, endMin] = end.split(':').map(Number);
-  return ((endHour - startHour) * 60) + (endMin - startMin);
+
+  // Jika jam selesai lebih kecil dari jam mulai, asumsi melewati tengah malam
+  const durationMinutes = ((endHour * 60 + endMin) - (startHour * 60 + startMin));
+  return durationMinutes >= 0 ? durationMinutes : (24 * 60) + durationMinutes;
 }
+
 
 // Create log endpoint
 app.post('/api/logs/create/:createLogId', async (req, res) => {
