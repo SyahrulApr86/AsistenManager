@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { DollarSign, Calendar as CalendarIcon, TrendingUp, ArrowDown, ArrowUp, Clock } from 'lucide-react';
+import { DollarSign, TrendingUp, ArrowDown, ArrowUp, Clock, RefreshCw } from 'lucide-react';
 import { FinanceData, FinanceStats } from '../types/log';
 import { getFinanceData, getAllFinanceData } from '../lib/api';
 import Navbar from './shared/Navbar';
@@ -12,11 +12,13 @@ import toast from 'react-hot-toast';
 export default function FinanceView() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
+    const [loadingStats, setLoadingStats] = useState(true);
     const [financeData, setFinanceData] = useState<FinanceData[]>([]);
     const [allFinanceData, setAllFinanceData] = useState<FinanceData[]>([]);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
     const [stats, setStats] = useState<FinanceStats | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     const months = [
         { value: 1, label: 'January' },
@@ -112,11 +114,6 @@ export default function FinanceView() {
                     selectedMonth
                 );
                 setFinanceData(currentData);
-
-                // Fetch all historical data
-                const allData = await getAllFinanceData(user.sessionId, user.csrfToken);
-                setAllFinanceData(allData);
-                setStats(calculateStats(allData));
             } catch (error) {
                 console.error('Error fetching finance data:', error);
                 toast.error('Failed to fetch finance data');
@@ -127,6 +124,49 @@ export default function FinanceView() {
 
         fetchData();
     }, [user, selectedYear, selectedMonth]);
+
+    useEffect(() => {
+        const fetchAllData = async () => {
+            if (!user?.sessionId || !user?.csrfToken) return;
+
+            setLoadingStats(true);
+            try {
+                const allData = await getAllFinanceData(user.sessionId, user.csrfToken);
+                setAllFinanceData(allData);
+                setStats(calculateStats(allData));
+            } catch (error) {
+                console.error('Error fetching all finance data:', error);
+            } finally {
+                setLoadingStats(false);
+            }
+        };
+
+        fetchAllData();
+    }, [user]);
+
+    const handleRefresh = async () => {
+        if (!user?.sessionId || !user?.csrfToken) {
+            toast.error('Session not found');
+            return;
+        }
+
+        setRefreshing(true);
+        try {
+            const currentData = await getFinanceData(
+                user.sessionId,
+                user.csrfToken,
+                selectedYear,
+                selectedMonth
+            );
+            setFinanceData(currentData);
+            toast.success('Data refreshed successfully');
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+            toast.error('Failed to refresh data');
+        } finally {
+            setRefreshing(false);
+        }
+    };
 
     const columns = [
         { header: 'NPM', key: 'NPM', width: 'w-32', centerHeader: true, centerData: true },
@@ -163,34 +203,32 @@ export default function FinanceView() {
                         </div>
                     </div>
 
-                    {stats && (
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                            <StatsCard
-                                title="Total Earnings"
-                                value={formatCurrency(stats.totalAmount)}
-                                icon={DollarSign}
-                                iconColor="text-green-600"
-                            />
-                            <StatsCard
-                                title="Average Monthly"
-                                value={formatCurrency(stats.averageMonthly)}
-                                icon={TrendingUp}
-                                iconColor="text-blue-600"
-                            />
-                            <StatsCard
-                                title="Highest Monthly"
-                                value={formatCurrency(stats.maxMonthly)}
-                                icon={ArrowUp}
-                                iconColor="text-green-600"
-                            />
-                            <StatsCard
-                                title="Lowest Monthly"
-                                value={formatCurrency(stats.minMonthly)}
-                                icon={ArrowDown}
-                                iconColor="text-red-600"
-                            />
-                        </div>
-                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <StatsCard
+                            title="Total Earnings"
+                            value={loadingStats ? "Loading..." : formatCurrency(stats?.totalAmount || 0)}
+                            icon={DollarSign}
+                            iconColor="text-green-600"
+                        />
+                        <StatsCard
+                            title="Average Monthly"
+                            value={loadingStats ? "Loading..." : formatCurrency(stats?.averageMonthly || 0)}
+                            icon={TrendingUp}
+                            iconColor="text-blue-600"
+                        />
+                        <StatsCard
+                            title="Highest Monthly"
+                            value={loadingStats ? "Loading..." : formatCurrency(stats?.maxMonthly || 0)}
+                            icon={ArrowUp}
+                            iconColor="text-green-600"
+                        />
+                        <StatsCard
+                            title="Lowest Monthly"
+                            value={loadingStats ? "Loading..." : formatCurrency(stats?.minMonthly || 0)}
+                            icon={ArrowDown}
+                            iconColor="text-red-600"
+                        />
+                    </div>
 
                     <div className="card p-8">
                         <div className="flex items-center justify-between mb-6">
@@ -203,6 +241,7 @@ export default function FinanceView() {
                                     value={selectedYear}
                                     onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                                     className="input-field w-32"
+                                    disabled={loading}
                                 >
                                     {years.map(year => (
                                         <option key={year} value={year}>{year}</option>
@@ -212,6 +251,7 @@ export default function FinanceView() {
                                     value={selectedMonth}
                                     onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
                                     className="input-field w-40"
+                                    disabled={loading}
                                 >
                                     {months.map(month => (
                                         <option key={month.value} value={month.value}>
@@ -219,6 +259,14 @@ export default function FinanceView() {
                                         </option>
                                     ))}
                                 </select>
+                                <button
+                                    onClick={handleRefresh}
+                                    disabled={loading || refreshing}
+                                    className="btn-secondary"
+                                >
+                                    <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                                    Refresh
+                                </button>
                             </div>
                         </div>
 

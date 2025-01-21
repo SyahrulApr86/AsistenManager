@@ -2,9 +2,24 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import { parse } from 'node-html-parser';
+import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config({ path: '.env' });
 
 const app = express();
 const port = 3001;
+
+// Initialize Supabase client with environment variables
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(cors({
   origin: 'http://localhost:5173',
@@ -329,6 +344,45 @@ app.post('/api/finance', async (req, res) => {
       throw new Error('Session cookies not found');
     }
 
+    // First check if we have data in the database
+    const { data: dbData, error: dbError } = await supabase
+        .from('finance_data')
+        .select('*')
+        .eq('username', decodeURIComponent(username))
+        .eq('year', year)
+        .eq('month', month);
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      throw new Error('Database error');
+    }
+
+    // For current month and previous 2 months, always fetch fresh data
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+    const isRecentMonth = (
+        year === currentYear && month >= currentMonth - 2 && month <= currentMonth
+    ) || (
+        year === currentYear - 1 &&
+        month >= 12 - (2 - (currentMonth - 1)) &&
+        currentMonth <= 2
+    );
+
+    if (!isRecentMonth && dbData && dbData.length > 0) {
+      // Return cached data for older months
+      return res.json(dbData.map(item => ({
+        NPM: item.npm,
+        Asisten: item.asisten,
+        Bulan: item.bulan,
+        Mata_Kuliah: item.mata_kuliah,
+        Jumlah_Jam: item.jumlah_jam,
+        Honor_Per_Jam: item.honor_per_jam,
+        Jumlah_Pembayaran: item.jumlah_pembayaran,
+        Status: item.status
+      })));
+    }
+
     const keuangan_url = "https://siasisten.cs.ui.ac.id/keuangan/listPembayaranPerAsisten";
     const response = await axios.post(
         keuangan_url,
@@ -369,7 +423,7 @@ app.post('/api/finance', async (req, res) => {
         for (let i = 1; i < rows.length; i++) {
           const cols = rows[i].querySelectorAll('td');
           if (cols.length === 8) {
-            data.push({
+            const entry = {
               NPM: cols[0].text.trim(),
               Asisten: cols[1].text.trim(),
               Bulan: cols[2].text.trim(),
@@ -378,7 +432,29 @@ app.post('/api/finance', async (req, res) => {
               Honor_Per_Jam: cols[5].text.trim(),
               Jumlah_Pembayaran: cols[6].text.trim(),
               Status: cols[7].text.trim()
-            });
+            };
+            data.push(entry);
+
+            // Update or insert into database
+            const { error: upsertError } = await supabase
+                .from('finance_data')
+                .upsert({
+                  username: decodeURIComponent(username),
+                  year,
+                  month,
+                  npm: entry.NPM,
+                  asisten: entry.Asisten,
+                  bulan: entry.Bulan,
+                  mata_kuliah: entry.Mata_Kuliah,
+                  jumlah_jam: entry.Jumlah_Jam,
+                  honor_per_jam: entry.Honor_Per_Jam,
+                  jumlah_pembayaran: entry.Jumlah_Pembayaran,
+                  status: entry.Status
+                });
+
+            if (upsertError) {
+              console.error('Error upserting data:', upsertError);
+            }
           }
         }
       }
@@ -401,16 +477,54 @@ app.get('/api/finance/all', async (req, res) => {
       throw new Error('Session cookies not found');
     }
 
-    const startYear = 2021;
+    const decodedUsername = decodeURIComponent(username);
+
+    // Get all data from database first
+    const { data: dbData, error: dbError } = await supabase
+        .from('finance_data')
+        .select('*')
+        .eq('username', decodedUsername);
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      throw new Error('Database error');
+    }
+
+    // Transform database data to match API format
+    const transformedData = dbData.map(item => ({
+      NPM: item.npm,
+      Asisten: item.asisten,
+      Bulan: item.bulan,
+      Mata_Kuliah: item.mata_kuliah,
+      Jumlah_Jam: item.jumlah_jam,
+      Honor_Per_Jam: item.honor_per_jam,
+      Jumlah_Pembayaran: item.jumlah_pembayaran,
+      Status: item.status
+    }));
+
+    // Return the data immediately
+    res.json(transformedData);
+
+    // In the background, fetch and update recent months
     const currentDate = new Date();
-    const endYear = currentDate.getFullYear();
-    const allData = [];
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
 
-    for (let year = startYear; year <= endYear; year++) {
-      const endMonth = year === currentDate.getFullYear() ? currentDate.getMonth() + 1 : 12;
-      const startMonth = year === startYear ? 6 : 1;
+    // Define months to update (current month and previous 2 months)
+    const monthsToUpdate = [];
+    for (let i = 0; i < 3; i++) {
+      let month = currentMonth - i;
+      let year = currentYear;
+      if (month <= 0) {
+        month += 12;
+        year -= 1;
+      }
+      monthsToUpdate.push({ year, month });
+    }
 
-      for (let month = startMonth; month <= endMonth; month++) {
+    // Update recent months in the background
+    for (const { year, month } of monthsToUpdate) {
+      try {
         const keuangan_url = "https://siasisten.cs.ui.ac.id/keuangan/listPembayaranPerAsisten";
         const response = await axios.post(
             keuangan_url,
@@ -418,7 +532,7 @@ app.get('/api/finance/all', async (req, res) => {
               csrfmiddlewaretoken: csrftoken,
               tahun: year.toString(),
               bulan: month.toString(),
-              username: decodeURIComponent(username),
+              username: decodedUsername,
               statusid: '-1'
             }).toString(),
             {
@@ -434,9 +548,7 @@ app.get('/api/finance/all', async (req, res) => {
                 "Sec-Fetch-User": "?1",
                 "Sec-Fetch-Dest": "document",
                 "Referer": keuangan_url
-              },
-              maxRedirects: 0,
-              validateStatus: status => status >= 200 && status < 400
+              }
             }
         );
 
@@ -450,27 +562,35 @@ app.get('/api/finance/all', async (req, res) => {
             for (let i = 1; i < rows.length; i++) {
               const cols = rows[i].querySelectorAll('td');
               if (cols.length === 8) {
-                allData.push({
-                  NPM: cols[0].text.trim(),
-                  Asisten: cols[1].text.trim(),
-                  Bulan: cols[2].text.trim(),
-                  Mata_Kuliah: cols[3].text.trim(),
-                  Jumlah_Jam: cols[4].text.trim(),
-                  Honor_Per_Jam: cols[5].text.trim(),
-                  Jumlah_Pembayaran: cols[6].text.trim(),
-                  Status: cols[7].text.trim()
-                });
+                const entry = {
+                  username: decodedUsername,
+                  year,
+                  month,
+                  npm: cols[0].text.trim(),
+                  asisten: cols[1].text.trim(),
+                  bulan: cols[2].text.trim(),
+                  mata_kuliah: cols[3].text.trim(),
+                  jumlah_jam: cols[4].text.trim(),
+                  honor_per_jam: cols[5].text.trim(),
+                  jumlah_pembayaran: cols[6].text.trim(),
+                  status: cols[7].text.trim()
+                };
+
+                // Update or insert into database
+                await supabase
+                    .from('finance_data')
+                    .upsert(entry);
               }
             }
           }
         }
 
-        // Add a small delay to avoid overwhelming the server
+        // Add a small delay between requests
         await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error(`Error updating data for ${year}-${month}:`, error);
       }
     }
-
-    res.json(allData);
   } catch (error) {
     console.error('Error in /api/finance/all:', error);
     res.status(500).json({ error: error.message });
