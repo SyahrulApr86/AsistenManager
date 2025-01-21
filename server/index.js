@@ -7,7 +7,7 @@ const app = express();
 const port = 3001;
 
 app.use(cors({
-  origin: 'http://localhost:5173', // Vite dev server
+  origin: 'http://localhost:5173',
   credentials: true,
   exposedHeaders: ['set-cookie']
 }));

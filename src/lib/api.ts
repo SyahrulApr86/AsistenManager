@@ -15,24 +15,19 @@ const api = axios.create({
 export async function getLowongan(sessionId: string, csrfToken: string): Promise<Lowongan[]> {
   console.log('Making request with cookies:', { sessionId, csrfToken });
   
-  const response = await api.get('/lowongan', {
-    headers: {
-      Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,
-      'X-CSRFToken': csrfToken
-    }
-  });
+  document.cookie = `sessionid=${sessionId}; path=/`;
+  document.cookie = `csrftoken=${csrfToken}; path=/`;
   
+  const response = await api.get('/lowongan');
   console.log('Response data:', response.data);
   return response.data;
 }
 
 export async function getLogs(sessionId: string, csrfToken: string, logId: string): Promise<Log[]> {
-  const response = await api.get(`/logs/${logId}`, {
-    headers: {
-      Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,
-      'X-CSRFToken': csrfToken
-    }
-  });
+  document.cookie = `sessionid=${sessionId}; path=/`;
+  document.cookie = `csrftoken=${csrfToken}; path=/`;
+  
+  const response = await api.get(`/logs/${logId}`);
   return response.data;
 }
 
@@ -42,12 +37,10 @@ export async function createLog(
   createLogId: string, 
   data: LogFormData
 ): Promise<void> {
-  await api.post(`/logs/create/${createLogId}`, data, {
-    headers: {
-      Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,
-      'X-CSRFToken': csrfToken
-    }
-  });
+  document.cookie = `sessionid=${sessionId}; path=/`;
+  document.cookie = `csrftoken=${csrfToken}; path=/`;
+  
+  await api.post(`/logs/create/${createLogId}`, data);
 }
 
 export async function updateLog(
@@ -56,12 +49,10 @@ export async function updateLog(
   logId: string, 
   data: LogFormData
 ): Promise<void> {
-  await api.put(`/logs/update/${logId}`, data, {
-    headers: {
-      Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,
-      'X-CSRFToken': csrfToken
-    }
-  });
+  document.cookie = `sessionid=${sessionId}; path=/`;
+  document.cookie = `csrftoken=${csrfToken}; path=/`;
+  
+  await api.put(`/logs/update/${logId}`, data);
 }
 
 export async function deleteLog(
@@ -69,10 +60,8 @@ export async function deleteLog(
   csrfToken: string, 
   logId: string
 ): Promise<void> {
-  await api.delete(`/logs/delete/${logId}`, {
-    headers: {
-      Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,
-      'X-CSRFToken': csrfToken
-    }
-  });
+  document.cookie = `sessionid=${sessionId}; path=/`;
+  document.cookie = `csrftoken=${csrfToken}; path=/`;
+  
+  await api.delete(`/logs/delete/${logId}`);
 }
