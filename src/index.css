@@ -30,7 +30,21 @@
   }
 
   .table-cell {
-    @apply px-3 py-2 text-sm text-gray-700;
+    @apply px-3 py-2 text-sm text-gray-700 align-top whitespace-normal;
+  }
+
+  .table-cell-wrap {
+    @apply break-words;
+    min-width: 200px;
+    max-width: 400px;
+  }
+
+  .table-cell-course {
+    @apply table-cell-wrap font-medium text-gray-900;
+  }
+
+  .table-cell-lecturer {
+    @apply table-cell-wrap text-gray-700;
   }
 
   .table-row {
@@ -38,7 +52,7 @@
   }
 
   .badge {
-    @apply px-2 py-1 text-xs font-medium rounded-full;
+    @apply inline-flex items-center px-2 py-1 text-xs font-medium rounded-full;
   }
 
   .badge-green {
@@ -51,5 +65,13 @@
 
   .badge-indigo {
     @apply bg-indigo-100 text-indigo-800;
+  }
+
+  .lecturer-list {
+    @apply flex flex-wrap gap-1;
+  }
+
+  .lecturer-item {
+    @apply text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full;
   }
 }

@@ -28,7 +28,6 @@ export default function Dashboard() {
 
     getLowongan(user.sessionId, user.csrfToken)
         .then((data) => {
-          console.log('Received vacancies:', data);
           setAllVacancies(data);
 
           // Find the most recent semester and year
@@ -75,6 +74,7 @@ export default function Dashboard() {
     navigate(`/vacancy/${logId}`);
   };
 
+  {/* Update the VacancyTable component */}
   const VacancyTable = ({ vacancies, isLoading }: { vacancies: Lowongan[], isLoading: boolean }) => (
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -110,16 +110,18 @@ export default function Dashboard() {
               vacancies.map((vacancy) => (
                   <tr key={vacancy.LogID} className="table-row">
                     <td className="table-cell text-center">{vacancy.No}</td>
-                    <td className="table-cell font-medium text-gray-900">
-                      <div className="truncate max-w-xs" title={vacancy['Mata Kuliah']}>
-                        {vacancy['Mata Kuliah']}
-                      </div>
+                    <td className="table-cell-course">
+                      {vacancy['Mata Kuliah']}
                     </td>
                     <td className="table-cell">{vacancy.Semester}</td>
                     <td className="table-cell">{vacancy['Tahun Ajaran']}</td>
-                    <td className="table-cell">
-                      <div className="truncate max-w-xs" title={vacancy.Dosen}>
-                        {vacancy.Dosen}
+                    <td className="table-cell-lecturer">
+                      <div className="lecturer-list">
+                        {vacancy.Dosen.split(',').map((lecturer, index) => (
+                            <span key={index} className="lecturer-item">
+                      {lecturer.trim()}
+                    </span>
+                        ))}
                       </div>
                     </td>
                     <td className="table-cell">

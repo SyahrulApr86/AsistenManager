@@ -29,18 +29,14 @@ const COMMON_HEADERS = {
 app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    console.log('Attempting login for username:', username);
 
     // First request to get the CSRF token
     const loginPageResponse = await axios.get(`${SIASISTEN_URL}/login/`, {
       headers: COMMON_HEADERS
     });
 
-    console.log('Login page response status:', loginPageResponse.status);
-
     // Get cookies from response headers
     const cookies = loginPageResponse.headers['set-cookie'] || [];
-    console.log('Initial cookies:', cookies);
 
     const csrfCookie = cookies.find(cookie => cookie.includes('csrftoken'));
     if (!csrfCookie) {
@@ -48,7 +44,6 @@ app.post('/api/login', async (req, res) => {
     }
 
     const csrftoken = csrfCookie.split(';')[0].split('=')[1];
-    console.log('CSRF Token from cookie:', csrftoken);
 
     const html = loginPageResponse.data;
     const csrfMatch = html.match(/name=['"]csrfmiddlewaretoken['"] value=['"]([^'"]+)['"]/);
@@ -57,7 +52,6 @@ app.post('/api/login', async (req, res) => {
     }
 
     const csrfmiddlewaretoken = csrfMatch[1];
-    console.log('CSRF Token from form:', csrfmiddlewaretoken);
 
     // Perform login with the obtained CSRF token
     const loginResponse = await axios.post(
@@ -81,9 +75,6 @@ app.post('/api/login', async (req, res) => {
       }
     );
 
-    console.log('Login response status:', loginResponse.status);
-    console.log('Login response headers:', loginResponse.headers);
-
     if (loginResponse.status === 302) {
       const sessionCookies = loginResponse.headers['set-cookie'];
       const sessionCookie = sessionCookies?.find(cookie => cookie.includes('sessionid'));
@@ -93,7 +84,6 @@ app.post('/api/login', async (req, res) => {
       }
 
       const sessionId = sessionCookie.split(';')[0].split('=')[1];
-      console.log('Session ID:', sessionId);
       res.json({
         success: true,
         user: {
@@ -124,8 +114,6 @@ app.get('/api/lowongan', async (req, res) => {
       throw new Error('Session cookies not found');
     }
 
-    console.log('Fetching lowongan with cookies:', { sessionid, csrftoken });
-
     const response = await axios.get(`${SIASISTEN_URL}/log/listLowonganAst`, {
       headers: {
         ...COMMON_HEADERS,
@@ -149,7 +137,6 @@ app.get('/api/lowongan', async (req, res) => {
       };
     });
 
-    console.log('Lowongan data:', lowongan);
     res.json(lowongan);
   } catch (error) {
     console.error('Error in /api/lowongan:', error);
