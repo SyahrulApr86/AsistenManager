@@ -23,18 +23,18 @@ export default function Navbar() {
               </span>
               </Link>
               <div className="hidden md:ml-6 md:flex md:space-x-8">
-                <Link to="/" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-indigo-600">
+                <a href="#" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-indigo-600">
                   <Home className="h-4 w-4 mr-1" />
                   Home
-                </Link>
-                <Link to="/calendar" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors duration-200">
+                </a>
+                <a href="#" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors duration-200">
                   <Calendar className="h-4 w-4 mr-1" />
                   Calendar
-                </Link>
-                <Link to="/finance" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors duration-200">
+                </a>
+                <a href="#" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors duration-200">
                   <DollarSign className="h-4 w-4 mr-1" />
                   Finance
-                </Link>
+                </a>
               </div>
             </div>
             <div className="flex items-center">
