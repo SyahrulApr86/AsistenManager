@@ -89,7 +89,7 @@ app.post('/api/login', async (req, res) => {
       }
 
       const sessionId = sessionCookie.split(';')[0].split('=')[1];
-
+      console.log('Session ID:', sessionId);
       res.json({
         success: true,
         user: {
@@ -113,7 +113,12 @@ app.post('/api/login', async (req, res) => {
 // Get lowongan endpoint
 app.get('/api/lowongan', async (req, res) => {
   try {
-    const { sessionid, csrftoken } = req.headers.cookie.split(';').reduce((acc, curr) => {
+    const cookiesHeader = req.headers.cookie;
+    if (!cookiesHeader) {
+      throw new Error('No cookies found in request headers');
+    }
+
+    const { sessionid, csrftoken } = cookiesHeader.split(';').reduce((acc, curr) => {
       const [key, value] = curr.trim().split('=');
       acc[key] = value;
       return acc;
@@ -144,7 +149,7 @@ app.get('/api/lowongan', async (req, res) => {
 
     res.json(lowongan);
   } catch (error) {
-    console.error('Error fetching lowongan:', error);
+    console.error('Error fetching lowongan:', error.message);
     res.status(500).json({ error: 'Failed to fetch lowongan' });
   }
 });
