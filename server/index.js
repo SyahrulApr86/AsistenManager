@@ -30,21 +30,17 @@ app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // First request to get the CSRF token
     const loginPageResponse = await axios.get(`${SIASISTEN_URL}/login/`, {
       headers: COMMON_HEADERS
     });
 
-    // Get cookies from response headers
     const cookies = loginPageResponse.headers['set-cookie'] || [];
-
     const csrfCookie = cookies.find(cookie => cookie.includes('csrftoken'));
     if (!csrfCookie) {
       throw new Error('No CSRF cookie received');
     }
 
     const csrftoken = csrfCookie.split(';')[0].split('=')[1];
-
     const html = loginPageResponse.data;
     const csrfMatch = html.match(/name=['"]csrfmiddlewaretoken['"] value=['"]([^'"]+)['"]/);
     if (!csrfMatch) {
@@ -53,26 +49,25 @@ app.post('/api/login', async (req, res) => {
 
     const csrfmiddlewaretoken = csrfMatch[1];
 
-    // Perform login with the obtained CSRF token
     const loginResponse = await axios.post(
-      `${SIASISTEN_URL}/login/`,
-      new URLSearchParams({
-        csrfmiddlewaretoken,
-        username,
-        password,
-        next: ''
-      }).toString(),
-      {
-        headers: {
-          ...COMMON_HEADERS,
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Cookie": `csrftoken=${csrftoken}`,
-          "Referer": `${SIASISTEN_URL}/login/`,
-          "Origin": SIASISTEN_URL
-        },
-        maxRedirects: 0,
-        validateStatus: status => status >= 200 && status < 400
-      }
+        `${SIASISTEN_URL}/login/`,
+        new URLSearchParams({
+          csrfmiddlewaretoken,
+          username,
+          password,
+          next: ''
+        }).toString(),
+        {
+          headers: {
+            ...COMMON_HEADERS,
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": `csrftoken=${csrftoken}`,
+            "Referer": `${SIASISTEN_URL}/login/`,
+            "Origin": SIASISTEN_URL
+          },
+          maxRedirects: 0,
+          validateStatus: status => status >= 200 && status < 400
+        }
     );
 
     if (loginResponse.status === 302) {
@@ -104,7 +99,6 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Get lowongan endpoint
 app.get('/api/lowongan', async (req, res) => {
   try {
     const sessionid = req.headers.cookie?.match(/sessionid=([^;]+)/)?.[1];
@@ -133,7 +127,7 @@ app.get('/api/lowongan', async (req, res) => {
         'Tahun Ajaran': cols[3].text.trim(),
         Dosen: cols[4].text.trim(),
         'Log Asisten Link': cols[5].querySelector('a').getAttribute('href'),
-        LogID: cols[5].querySelector('a').getAttribute('href').split('/').slice(-2)[0],
+        LogID: cols[5].querySelector('a').getAttribute('href').split('/').slice(-2)[0]
       };
     });
 
@@ -144,7 +138,6 @@ app.get('/api/lowongan', async (req, res) => {
   }
 });
 
-// Get logs endpoint
 app.get('/api/logs/:logId', async (req, res) => {
   try {
     const { logId } = req.params;
@@ -154,7 +147,8 @@ app.get('/api/logs/:logId', async (req, res) => {
       return acc;
     }, {});
 
-    const response = await axios.get(`${SIASISTEN_URL}/log/listLogMahasiswa/${logId}/`, {
+    // First get the create log link
+    const logPageResponse = await axios.get(`${SIASISTEN_URL}/log/listLogMahasiswa/${logId}/`, {
       headers: {
         ...COMMON_HEADERS,
         Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
@@ -162,14 +156,18 @@ app.get('/api/logs/:logId', async (req, res) => {
       },
     });
 
-    const root = parse(response.data);
+    const root = parse(logPageResponse.data);
+    const createLogForm = root.querySelector('form[action]');
+    const createLogLink = createLogForm ? createLogForm.getAttribute('action') : null;
+
+    // Then get the logs
     const rows = root.querySelectorAll('table tr');
     const logs = rows.slice(1).map(row => {
       const cols = row.querySelectorAll('td');
-      const jamStr = cols[2].text.trim(); // Jam Mulai - Jam Selesai + Deskripsi tambahan
-      const [jamRange] = jamStr.split('\n'); // Hanya ambil bagian waktu
-      const [jamMulai, jamSelesai] = jamRange.split('-').map(t => t.trim()); // Pisah Jam Mulai dan Jam Selesai
-      const durasi = calculateDuration(jamMulai, jamSelesai); // Hitung durasi menit
+      const jamStr = cols[2].text.trim();
+      const [jamRange] = jamStr.split('\n');
+      const [jamMulai, jamSelesai] = jamRange.split('-').map(t => t.trim());
+      const durasi = calculateDuration(jamMulai, jamSelesai);
 
       return {
         No: cols[0].text.trim(),
@@ -186,14 +184,16 @@ app.get('/api/logs/:logId', async (req, res) => {
       };
     });
 
-    res.json(logs);
+    res.json({
+      logs,
+      createLogLink
+    });
   } catch (error) {
     console.error('Error fetching logs:', error);
     res.status(500).json({ error: 'Failed to fetch logs' });
   }
 });
 
-// Helper functions
 function formatDate(dateStr) {
   const [day, month, year] = dateStr.split(' ');
   const monthMap = {
@@ -206,13 +206,10 @@ function formatDate(dateStr) {
 function calculateDuration(start, end) {
   const [startHour, startMin] = start.split(':').map(Number);
   const [endHour, endMin] = end.split(':').map(Number);
-
-  // Jika jam selesai lebih kecil dari jam mulai, asumsi melewati tengah malam
   const durationMinutes = ((endHour * 60 + endMin) - (startHour * 60 + startMin));
   return durationMinutes >= 0 ? durationMinutes : (24 * 60) + durationMinutes;
 }
 
-// Create log endpoint
 app.post('/api/logs/create/:createLogId', async (req, res) => {
   try {
     const { createLogId } = req.params;
@@ -223,17 +220,17 @@ app.post('/api/logs/create/:createLogId', async (req, res) => {
     }, {});
 
     const response = await axios.post(
-      `${SIASISTEN_URL}/log/create/${createLogId}/`,
-      req.body,
-      {
-        headers: {
-          ...COMMON_HEADERS,
-          Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-          'X-CSRFToken': req.headers['x-csrftoken'],
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Referer: `${SIASISTEN_URL}/log/create/${createLogId}/`,
-        },
-      }
+        `${SIASISTEN_URL}/log/create/${createLogId}/`,
+        req.body,
+        {
+          headers: {
+            ...COMMON_HEADERS,
+            Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+            'X-CSRFToken': req.headers['x-csrftoken'],
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Referer: `${SIASISTEN_URL}/log/create/${createLogId}/`,
+          },
+        }
     );
 
     res.json({ success: true });
@@ -243,7 +240,6 @@ app.post('/api/logs/create/:createLogId', async (req, res) => {
   }
 });
 
-// Update log endpoint
 app.put('/api/logs/update/:logId', async (req, res) => {
   try {
     const { logId } = req.params;
@@ -254,17 +250,17 @@ app.put('/api/logs/update/:logId', async (req, res) => {
     }, {});
 
     const response = await axios.post(
-      `${SIASISTEN_URL}/log/update/${logId}/`,
-      req.body,
-      {
-        headers: {
-          ...COMMON_HEADERS,
-          Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-          'X-CSRFToken': req.headers['x-csrftoken'],
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Referer: `${SIASISTEN_URL}/log/update/${logId}/`,
-        },
-      }
+        `${SIASISTEN_URL}/log/update/${logId}/`,
+        req.body,
+        {
+          headers: {
+            ...COMMON_HEADERS,
+            Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+            'X-CSRFToken': req.headers['x-csrftoken'],
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Referer: `${SIASISTEN_URL}/log/update/${logId}/`,
+          },
+        }
     );
 
     res.json({ success: true });
@@ -274,7 +270,6 @@ app.put('/api/logs/update/:logId', async (req, res) => {
   }
 });
 
-// Delete log endpoint
 app.delete('/api/logs/delete/:logId', async (req, res) => {
   try {
     const { logId } = req.params;
@@ -285,17 +280,17 @@ app.delete('/api/logs/delete/:logId', async (req, res) => {
     }, {});
 
     const response = await axios.post(
-      `${SIASISTEN_URL}/log/delete/${logId}/`,
-      { csrfmiddlewaretoken: req.headers['x-csrftoken'] },
-      {
-        headers: {
-          ...COMMON_HEADERS,
-          Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
-          'X-CSRFToken': req.headers['x-csrftoken'],
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Referer: `${SIASISTEN_URL}/log/delete/${logId}/`,
-        },
-      }
+        `${SIASISTEN_URL}/log/delete/${logId}/`,
+        { csrfmiddlewaretoken: req.headers['x-csrftoken'] },
+        {
+          headers: {
+            ...COMMON_HEADERS,
+            Cookie: `sessionid=${sessionid}; csrftoken=${csrftoken}`,
+            'X-CSRFToken': req.headers['x-csrftoken'],
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Referer: `${SIASISTEN_URL}/log/delete/${logId}/`,
+          },
+        }
     );
 
     res.json({ success: true });

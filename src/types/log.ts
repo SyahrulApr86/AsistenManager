@@ -7,7 +7,6 @@ export interface Lowongan {
   'Log Asisten Link': string;
   LogID: string;
   'Create Log Link'?: string;
-  'Create Log Link ID'?: string;
 }
 
 export interface Log {
@@ -42,3 +41,20 @@ export interface LogFormData {
     minute: string;
   };
 }
+
+export const LOG_CATEGORIES = {
+  "1": "Asistensi/Tutorial",
+  "2": "Mengoreksi",
+  "3": "Mengawas",
+  "5": "Persiapan Asistensi",
+  "6": "Membuat soal/tugas",
+  "7": "Rapat",
+  "8": "Sit in Kelas",
+  "9": "Pengembangan Materi",
+  "10": "Pengembangan apps",
+  "11": "Persiapan infra",
+  "12": "Dokumentasi",
+  "13": "Persiapan kuliah",
+  "14": "Penunjang",
+  "15": "Input Data"
+} as const;

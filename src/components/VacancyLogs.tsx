@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, ClipboardList, Clock } from 'lucide-react';
-import { Log } from '../types/log';
+import { ArrowLeft, ClipboardList, Clock, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Log, Lowongan } from '../types/log';
 import toast from 'react-hot-toast';
-import { getLogs, getLowongan } from '../lib/api';
+import { getLogs, getLowongan, deleteLog } from '../lib/api';
 import Navbar from './shared/Navbar';
 import Footer from './shared/Footer';
 import Table from './shared/Table';
 import StatsCard from './shared/StatsCard';
+import LogForm from './LogForm';
 
 export default function VacancyLogs() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,10 @@ export default function VacancyLogs() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [isActive, setIsActive] = useState(false);
+  const [currentVacancy, setCurrentVacancy] = useState<Lowongan | null>(null);
+  const [showLogForm, setShowLogForm] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<Log | null>(null);
+  const [createLogLink, setCreateLogLink] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,7 +31,6 @@ export default function VacancyLogs() {
       }
 
       try {
-
         const vacancies = await getLowongan(user.sessionId, user.csrfToken);
         if (vacancies.length > 0) {
           const sortedVacancies = [...vacancies].sort((a, b) => {
@@ -38,19 +42,19 @@ export default function VacancyLogs() {
           const latestYear = sortedVacancies[0]['Tahun Ajaran'];
           const latestSemester = sortedVacancies[0].Semester;
 
-
-          const currentVacancy = vacancies.find(v => v.LogID === id);
-          if (currentVacancy) {
+          const vacancy = vacancies.find(v => v.LogID === id);
+          if (vacancy) {
+            setCurrentVacancy(vacancy);
             setIsActive(
-                currentVacancy['Tahun Ajaran'] === latestYear &&
-                currentVacancy.Semester === latestSemester
+                vacancy['Tahun Ajaran'] === latestYear &&
+                vacancy.Semester === latestSemester
             );
           }
         }
 
-
-        const logsData = await getLogs(user.sessionId, user.csrfToken, id);
+        const { logs: logsData, createLogLink: logLink } = await getLogs(user.sessionId, user.csrfToken, id);
         setLogs(logsData);
+        setCreateLogLink(logLink);
       } catch (error) {
         toast.error('Failed to fetch data');
         console.error('Error fetching data:', error);
@@ -70,6 +74,52 @@ export default function VacancyLogs() {
     return logs.reduce((total, log) => total + (log['Durasi (Menit)'] || 0), 0);
   };
 
+  const handleCreateLog = () => {
+    setSelectedLog(null);
+    setShowLogForm(true);
+  };
+
+  const handleEditLog = (log: Log) => {
+    setSelectedLog(log);
+    setShowLogForm(true);
+  };
+
+  const handleDeleteLog = async (log: Log) => {
+    if (!user?.sessionId || !user?.csrfToken) {
+      toast.error('Session not found');
+      return;
+    }
+
+    if (window.confirm('Are you sure you want to delete this log?')) {
+      try {
+        await deleteLog(user.sessionId, user.csrfToken, log.LogID);
+        toast.success('Log deleted successfully');
+        // Refresh logs
+        const { logs: updatedLogs } = await getLogs(user.sessionId, user.csrfToken, id!);
+        setLogs(updatedLogs);
+      } catch {
+        toast.error('Failed to delete log');
+      }
+    }
+  };
+
+  const handleCloseForm = () => {
+    setShowLogForm(false);
+    setSelectedLog(null);
+  };
+
+  const handleLogSaved = async () => {
+    if (user?.sessionId && user?.csrfToken && id) {
+      try {
+        const { logs: updatedLogs } = await getLogs(user.sessionId, user.csrfToken, id);
+        setLogs(updatedLogs);
+      } catch {
+        toast.error('Failed to refresh logs');
+      }
+    }
+    handleCloseForm();
+  };
+
   const columns = [
     { header: '#', key: 'No', width: 'w-12', centerHeader: true, centerData: true },
     { header: 'Date', key: 'Tanggal', width: 'w-24', centerHeader: true },
@@ -84,8 +134,26 @@ export default function VacancyLogs() {
       )},
     { header: 'Status', key: 'Status', width: 'w-28', centerHeader: true, centerData: true, render: (value: string) => (
           <span className={`badge ${value.toLowerCase().includes('disetujui') ? 'badge-green' : 'badge-yellow'}`}>
-      {value}
-    </span>
+        {value}
+      </span>
+      )},
+    { header: 'Actions', key: 'LogID', width: 'w-32', centerHeader: true, centerData: true, render: (value: string, row: Log) => (
+          <div className="flex items-center justify-center space-x-2">
+            <button
+                onClick={() => handleEditLog(row)}
+                className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                title="Edit"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+                onClick={() => handleDeleteLog(row)}
+                className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                title="Delete"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
       )}
   ];
 
@@ -117,6 +185,15 @@ export default function VacancyLogs() {
             <div className="card p-8">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-900">Activity Logs</h3>
+                {createLogLink && (
+                    <button
+                        onClick={handleCreateLog}
+                        className="btn-primary"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Create Log
+                    </button>
+                )}
               </div>
               <Table
                   columns={columns}
@@ -128,6 +205,18 @@ export default function VacancyLogs() {
           </div>
         </div>
         <Footer />
+
+        {showLogForm && currentVacancy && createLogLink && (
+            <LogForm
+                vacancy={{
+                  ...currentVacancy,
+                  'Create Log Link': createLogLink
+                }}
+                log={selectedLog}
+                onClose={handleCloseForm}
+                onSave={handleLogSaved}
+            />
+        )}
       </div>
   );
 }
