@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, BookOpen, ClipboardList, Clock, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Clock, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Log, Lowongan } from '../types/log';
 import toast from 'react-hot-toast';
 import { getLogs, getLowongan, deleteLog } from '../lib/api';
@@ -88,16 +88,46 @@ export default function VacancyLogs() {
       return;
     }
 
-    if (!window.confirm('Are you sure you want to delete this log?')) {
-      return;
-    }
+    const confirmDelete = () => {
+      return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        modal.innerHTML = `
+          <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Delete Log</h3>
+            <p class="text-gray-500 mb-6">Are you sure you want to delete this log? This action cannot be undone.</p>
+            <div class="flex justify-end space-x-4">
+              <button class="btn-secondary" id="cancel">Cancel</button>
+              <button class="btn-primary bg-red-600 hover:bg-red-700" id="confirm">Delete</button>
+            </div>
+          </div>
+        `;
 
-    try {
-      await deleteLog(user.sessionId, user.csrfToken, log.LogID);
-      toast.success('Log deleted successfully');
-      fetchData();
-    } catch {
-      toast.error('Failed to delete log');
+        document.body.appendChild(modal);
+
+        const cancelBtn = modal.querySelector('#cancel');
+        const confirmBtn = modal.querySelector('#confirm');
+
+        cancelBtn?.addEventListener('click', () => {
+          document.body.removeChild(modal);
+          resolve(false);
+        });
+
+        confirmBtn?.addEventListener('click', () => {
+          document.body.removeChild(modal);
+          resolve(true);
+        });
+      });
+    };
+
+    if (await confirmDelete()) {
+      try {
+        await deleteLog(user.sessionId, user.csrfToken, log.LogID);
+        toast.success('Log deleted successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to delete log');
+      }
     }
   };
 
@@ -120,7 +150,7 @@ export default function VacancyLogs() {
         {value}
       </span>
       )},
-    { header: 'Actions', key: 'LogID', width: 'w-32', centerHeader: true, centerData: true, render: (value: string, row: Log) => {
+    { header: 'Actions', key: 'LogID', width: 'w-32', centerHeader: true, centerData: true, render: (_value: string, row: Log) => {
         const canEdit = row.Status.toLowerCase() === 'dilaporkan';
         return (
             <div className="flex items-center justify-center space-x-2">

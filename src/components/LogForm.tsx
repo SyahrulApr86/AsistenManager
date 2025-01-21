@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { X } from 'lucide-react';
+import { X, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import { Log, LogFormData, LOG_CATEGORIES } from '../types/log';
 import { createLog, updateLog } from '../lib/api';
 import toast from 'react-hot-toast';
@@ -20,9 +20,15 @@ const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')
 // Minutes array (00, 15, 30, 45)
 const minutes = ['00', '15', '30', '45'];
 
+// Days of the week
+const daysOfWeek = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
 export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState<LogFormData>({
     kategori_log: '',
     deskripsi: '',
@@ -43,10 +49,12 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
 
   useEffect(() => {
     if (log) {
-      // Parse existing log data
       const [day, month, year] = log.Tanggal.split('-');
       const [startHour, startMinute] = log['Jam Mulai'].split(':');
       const [endHour, endMinute] = log['Jam Selesai'].split(':');
+
+      const logDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      setSelectedDate(logDate);
 
       setFormData({
         kategori_log: Object.entries(LOG_CATEGORIES).find(([_, value]) => value === log.Kategori)?.[0] || '1',
@@ -76,17 +84,16 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
       toast.error('End time must be after start time');
       return false;
     }
-
     return true;
   };
 
   const validateDate = () => {
+    if (!selectedDate) {
+      toast.error('Please select a date');
+      return false;
+    }
+
     const now = new Date();
-    const selectedDate = new Date(
-        parseInt(formData.tanggal.year),
-        parseInt(formData.tanggal.month) - 1,
-        parseInt(formData.tanggal.day)
-    );
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     // Check if selected date is in the future
@@ -102,6 +109,19 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
     }
 
     return true;
+  };
+
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    setFormData({
+      ...formData,
+      tanggal: {
+        day: date.getDate().toString().padStart(2, '0'),
+        month: (date.getMonth() + 1).toString().padStart(2, '0'),
+        year: date.getFullYear().toString()
+      }
+    });
+    setShowCalendar(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,9 +140,11 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
     try {
       if (log) {
         await updateLog(user.sessionId, user.csrfToken, log.LogID, formData);
+        toast.success('Log updated successfully');
       } else {
         const createLogId = vacancy['Create Log Link'].split('/').slice(-2)[0];
         await createLog(user.sessionId, user.csrfToken, createLogId, formData);
+        toast.success('Log created successfully');
       }
       onSave();
     } catch (error) {
@@ -133,16 +155,56 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
     }
   };
 
-  // Get available days for the current month
   const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month, 0).getDate();
+    return new Date(year, month + 1, 0).getDate();
   };
 
-  const currentDate = new Date();
-  const daysInMonth = getDaysInMonth(
-      parseInt(formData.tanggal.year),
-      parseInt(formData.tanggal.month)
-  );
+  const generateCalendarDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = getDaysInMonth(year, month);
+    const today = new Date();
+
+    // Adjust first day to start from Monday (0) instead of Sunday (6)
+    const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
+
+    const days = [];
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < adjustedFirstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="h-8 w-8" />);
+    }
+
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const isToday = date.toDateString() === today.toDateString();
+      const isSelected = selectedDate?.toDateString() === date.toDateString();
+      const isPast = date < today;
+      const isFuture = date > today;
+
+      days.push(
+          <button
+              key={day}
+              type="button"
+              disabled={isFuture}
+              onClick={() => handleDateSelect(date)}
+              className={`
+            h-8 w-8 rounded-full flex items-center justify-center text-sm
+            ${isSelected ? 'bg-indigo-600 text-white' : ''}
+            ${isToday ? 'bg-indigo-100 text-indigo-600' : ''}
+            ${isPast ? 'hover:bg-gray-100' : ''}
+            ${isFuture ? 'text-gray-300 cursor-not-allowed' : ''}
+          `}
+          >
+            {day}
+          </button>
+      );
+    }
+
+    return days;
+  };
 
   return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -191,76 +253,56 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Date
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <select
-                        value={formData.tanggal.day}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          tanggal: { ...formData.tanggal, day: e.target.value }
-                        })}
-                        className="input-field"
+                  <div className="relative">
+                    <input
+                        type="text"
+                        value={selectedDate ? selectedDate.toLocaleDateString() : ''}
+                        readOnly
+                        onClick={() => setShowCalendar(!showCalendar)}
+                        className="input-field pr-10 cursor-pointer"
+                        placeholder="Select date"
                         required
-                    >
-                      {Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString().padStart(2, '0'))
-                          .filter(day => {
-                            const selectedDate = new Date(
-                                parseInt(formData.tanggal.year),
-                                parseInt(formData.tanggal.month) - 1,
-                                parseInt(day)
-                            );
-                            const today = new Date(
-                                currentDate.getFullYear(),
-                                currentDate.getMonth(),
-                                currentDate.getDate()
-                            );
-                            return selectedDate <= today;
-                          })
-                          .map(day => (
-                              <option key={day} value={day}>{day}</option>
-                          ))
-                      }
-                    </select>
-                    <select
-                        value={formData.tanggal.month}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          tanggal: { ...formData.tanggal, month: e.target.value }
-                        })}
-                        className="input-field"
-                        required
-                    >
-                      {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'))
-                          .filter(month => {
-                            const selectedMonth = parseInt(month) - 1;
-                            const selectedYear = parseInt(formData.tanggal.year);
-                            return (
-                                selectedYear < currentDate.getFullYear() ||
-                                (selectedYear === currentDate.getFullYear() && selectedMonth <= currentDate.getMonth())
-                            );
-                          })
-                          .map(month => (
-                              <option key={month} value={month}>{month}</option>
-                          ))
-                      }
-                    </select>
-                    <select
-                        value={formData.tanggal.year}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          tanggal: { ...formData.tanggal, year: e.target.value }
-                        })}
-                        className="input-field"
-                        required
-                    >
-                      {[currentDate.getFullYear(), currentDate.getFullYear() - 1].map(year => (
-                          <option key={year} value={year}>{year}</option>
-                      ))}
-                    </select>
+                    />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
+
+                  {showCalendar && (
+                      <div className="absolute z-10 mt-1 bg-white rounded-lg shadow-lg border p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <button
+                              type="button"
+                              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+                              className="p-1 hover:bg-gray-100 rounded"
+                          >
+                            ←
+                          </button>
+                          <span className="font-medium">
+                        {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                      </span>
+                          <button
+                              type="button"
+                              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+                              className="p-1 hover:bg-gray-100 rounded"
+                          >
+                            →
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1 mb-2">
+                          {daysOfWeek.map(day => (
+                              <div key={day} className="h-8 w-8 flex items-center justify-center text-xs text-gray-500">
+                                {day}
+                              </div>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                          {generateCalendarDays()}
+                        </div>
+                      </div>
+                  )}
                 </div>
 
                 <div>
