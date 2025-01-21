@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, CheckCircle, History, Eye } from 'lucide-react';
+import { BookOpen, CheckCircle, History, Eye, ClipboardList } from 'lucide-react';
 import { Lowongan } from '../types/log';
 import toast from 'react-hot-toast';
 import { getLowongan } from '../lib/api';
@@ -86,31 +86,41 @@ export default function Dashboard() {
   ];
 
   return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-blue-50">
-        <Navbar />
-        <div className="flex-grow pt-16 pb-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="card p-8 mb-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                    Welcome back, {user?.username}!
-                  </h2>
-                  <p className="text-gray-600">
-                    Manage your teaching assistant positions
-                  </p>
-                </div>
-                <BookOpen className="h-12 w-12 text-indigo-600" />
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-blue-50">
+      <Navbar />
+      <div className="flex-grow pt-16 pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="card p-8 mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Welcome back, {user?.username}!
+                </h2>
+                <p className="text-gray-600">
+                  Manage your teaching assistant positions
+                </p>
               </div>
+              <BookOpen className="h-12 w-12 text-indigo-600" />
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <StatsCard title="Total Positions" value={allVacancies.length} icon={BookOpen} />
-              <StatsCard title="Active Positions" value={activeVacancies.length} icon={CheckCircle} iconColor="text-green-600" />
-              <StatsCard title="Past Positions" value={inactiveVacancies.length} icon={History} iconColor="text-gray-600" />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <StatsCard title="Total Positions" value={allVacancies.length} icon={BookOpen} />
+            <StatsCard title="Active Positions" value={activeVacancies.length} icon={CheckCircle} iconColor="text-green-600" />
+            <StatsCard title="Past Positions" value={inactiveVacancies.length} icon={History} iconColor="text-gray-600" />
+            <button
+              onClick={() => navigate('/all-logs')}
+              className="card p-6 hover:shadow-xl transition-shadow duration-300 flex items-center justify-between"
+            >
+              <div>
+                <p className="text-sm font-medium text-gray-600">View All Logs</p>
+                <p className="text-2xl font-bold text-indigo-600">Combined</p>
+              </div>
+              <ClipboardList className="h-8 w-8 text-indigo-600" />
+            </button>
+          </div>
 
-            <div className="card p-8 mb-8">
+          <div className="card p-8 mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="h-5 w-5 text-green-600" />
@@ -145,9 +155,9 @@ export default function Dashboard() {
                   emptyMessage="No past positions found"
               />
             </div>
-          </div>
         </div>
-        <Footer />
       </div>
+      <Footer />
+    </div>
   );
 }

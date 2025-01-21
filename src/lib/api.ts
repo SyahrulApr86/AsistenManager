@@ -3,7 +3,6 @@ import { Lowongan, Log, LogFormData } from '../types/log';
 
 const API_URL = 'http://localhost:3001/api';
 
-// Create axios instance with default config
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
@@ -34,10 +33,17 @@ export async function createLog(
     createLogId: string,
     data: LogFormData
 ): Promise<void> {
-  const response = await api.post(`/logs/create/${createLogId}`, {
-    ...data,
+  // Extract the ID from the createLogId (which might be a full URL path)
+  const id = createLogId.split('/').filter(Boolean).pop();
+
+  if (!id) {
+    throw new Error('Invalid create log ID');
+  }
+
+  const response = await api.post(`/logs/create/${id}`, {
     sessionId,
-    csrfToken
+    csrfToken,
+    ...data
   });
 
   if (!response.data.success) {
@@ -52,9 +58,9 @@ export async function updateLog(
     data: LogFormData
 ): Promise<void> {
   const response = await api.put(`/logs/update/${logId}`, {
-    ...data,
     sessionId,
-    csrfToken
+    csrfToken,
+    ...data
   });
 
   if (!response.data.success) {

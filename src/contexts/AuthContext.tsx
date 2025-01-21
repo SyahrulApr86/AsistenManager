@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const userData = response.data.user;
-
+      
       // Validate user data before storing
       if (!userData?.username || !userData?.sessionId || !userData?.csrfToken) {
         throw new Error('Invalid user data received');
@@ -73,9 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-      <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
-        {!loading && children}
-      </AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+      {!loading && children}
+    </AuthContext.Provider>
   );
 }
 

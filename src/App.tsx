@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginForm from './components/LoginForm';
 import Dashboard from './components/Dashboard';
 import VacancyLogs from './components/VacancyLogs';
+import AllLogs from './components/AllLogs';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -34,6 +35,11 @@ function App() {
           <Route path="/vacancy/:id" element={
             <PrivateRoute>
               <VacancyLogs />
+            </PrivateRoute>
+          } />
+          <Route path="/all-logs" element={
+            <PrivateRoute>
+              <AllLogs />
             </PrivateRoute>
           } />
         </Routes>

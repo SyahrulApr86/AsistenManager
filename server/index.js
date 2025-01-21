@@ -50,24 +50,24 @@ app.post('/api/login', async (req, res) => {
     const csrfmiddlewaretoken = csrfMatch[1];
 
     const loginResponse = await axios.post(
-      `${SIASISTEN_URL}/login/`,
-      new URLSearchParams({
-        csrfmiddlewaretoken,
-        username,
-        password,
-        next: ''
-      }).toString(),
-      {
-        headers: {
-          ...COMMON_HEADERS,
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Cookie": `csrftoken=${csrftoken}`,
-          "Referer": `${SIASISTEN_URL}/login/`,
-          "Origin": SIASISTEN_URL
-        },
-        maxRedirects: 0,
-        validateStatus: status => status >= 200 && status < 400
-      }
+        `${SIASISTEN_URL}/login/`,
+        new URLSearchParams({
+          csrfmiddlewaretoken,
+          username,
+          password,
+          next: ''
+        }).toString(),
+        {
+          headers: {
+            ...COMMON_HEADERS,
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": `csrftoken=${csrftoken}`,
+            "Referer": `${SIASISTEN_URL}/login/`,
+            "Origin": SIASISTEN_URL
+          },
+          maxRedirects: 0,
+          validateStatus: status => status >= 200 && status < 400
+        }
     );
 
     if (loginResponse.status === 302) {
@@ -210,7 +210,6 @@ function calculateDuration(start, end) {
   return durationMinutes >= 0 ? durationMinutes : (24 * 60) + durationMinutes;
 }
 
-
 app.post('/api/logs/create/:createLogId', async (req, res) => {
   try {
     const { createLogId } = req.params;
@@ -228,7 +227,7 @@ app.post('/api/logs/create/:createLogId', async (req, res) => {
     data.append('waktu_selesai_hour', formData.waktu_selesai.hour);
     data.append('waktu_selesai_minute', formData.waktu_selesai.minute);
 
-    const response = await axios.post(
+    await axios.post(
         `${SIASISTEN_URL}/log/create/${createLogId}/`,
         data.toString(),
         {
@@ -237,7 +236,8 @@ app.post('/api/logs/create/:createLogId', async (req, res) => {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Cookie': `csrftoken=${csrfToken}; sessionid=${sessionId}`,
             'X-CSRFToken': csrfToken,
-            'Referer': `${SIASISTEN_URL}/log/create/${createLogId}/`
+            'Referer': `${SIASISTEN_URL}/log/create/${createLogId}/`,
+            'Origin': SIASISTEN_URL
           }
         }
     );
@@ -266,7 +266,7 @@ app.put('/api/logs/update/:logId', async (req, res) => {
     data.append('waktu_selesai_hour', formData.waktu_selesai.hour);
     data.append('waktu_selesai_minute', formData.waktu_selesai.minute);
 
-    const response = await axios.post(
+    await axios.post(
         `${SIASISTEN_URL}/log/update/${logId}/`,
         data.toString(),
         {
@@ -275,7 +275,8 @@ app.put('/api/logs/update/:logId', async (req, res) => {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Cookie': `csrftoken=${csrfToken}; sessionid=${sessionId}`,
             'X-CSRFToken': csrfToken,
-            'Referer': `${SIASISTEN_URL}/log/update/${logId}/`
+            'Referer': `${SIASISTEN_URL}/log/update/${logId}/`,
+            'Origin': SIASISTEN_URL
           }
         }
     );
@@ -295,7 +296,7 @@ app.delete('/api/logs/delete/:logId', async (req, res) => {
     const data = new URLSearchParams();
     data.append('csrfmiddlewaretoken', csrfToken);
 
-    const response = await axios.post(
+    await axios.post(
         `${SIASISTEN_URL}/log/delete/${logId}/`,
         data.toString(),
         {
@@ -304,7 +305,8 @@ app.delete('/api/logs/delete/:logId', async (req, res) => {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Cookie': `csrftoken=${csrfToken}; sessionid=${sessionId}`,
             'X-CSRFToken': csrfToken,
-            'Referer': `${SIASISTEN_URL}/log/delete/${logId}/`
+            'Referer': `${SIASISTEN_URL}/log/delete/${logId}/`,
+            'Origin': SIASISTEN_URL
           }
         }
     );

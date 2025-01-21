@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { X, Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 import { Log, LogFormData, LOG_CATEGORIES } from '../types/log';
 import { createLog, updateLog } from '../lib/api';
 import toast from 'react-hot-toast';
@@ -73,6 +73,10 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
           minute: endMinute.padStart(2, '0')
         }
       });
+    } else {
+      // Set today's date as default for new logs
+      const today = new Date();
+      setSelectedDate(today);
     }
   }, [log]);
 
@@ -142,8 +146,10 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
         await updateLog(user.sessionId, user.csrfToken, log.LogID, formData);
         toast.success('Log updated successfully');
       } else {
-        const createLogId = vacancy['Create Log Link'].split('/').slice(-2)[0];
-        await createLog(user.sessionId, user.csrfToken, createLogId, formData);
+        if (!vacancy['Create Log Link']) {
+          throw new Error('Create log link not found');
+        }
+        await createLog(user.sessionId, user.csrfToken, vacancy['Create Log Link'], formData);
         toast.success('Log created successfully');
       }
       onSave();
