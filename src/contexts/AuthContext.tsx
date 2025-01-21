@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types/auth';
 import axios, { AxiosError } from 'axios';
 
@@ -13,7 +13,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Load user from localStorage on initial mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
+  }, []);
 
   const signIn = async (username: string, password: string) => {
     try {
@@ -26,7 +35,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Login failed');
       }
 
-      setUser(response.data.user);
+      const userData = response.data.user;
+      setUser(userData);
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       if (error instanceof AxiosError) {
         throw new Error(error.response?.data?.error || 'Authentication failed');
@@ -37,6 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     setUser(null);
+    // Clear user data from localStorage
+    localStorage.removeItem('user');
   };
 
   return (

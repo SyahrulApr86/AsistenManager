@@ -6,7 +6,10 @@ import { parse } from 'node-html-parser';
 const app = express();
 const port = 3001;
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // Vite dev server
+  credentials: true
+}));
 app.use(express.json());
 
 const SIASISTEN_URL = 'https://siasisten.cs.ui.ac.id';
@@ -32,11 +35,8 @@ app.post('/api/login', async (req, res) => {
       headers: COMMON_HEADERS
     });
 
-    console.log('Login page response status:', loginPageResponse.status);
-
     // Get cookies from response headers
     const cookies = loginPageResponse.headers['set-cookie'] || [];
-    console.log('Initial cookies:', cookies);
 
     const csrfCookie = cookies.find(cookie => cookie.includes('csrftoken'));
     if (!csrfCookie) {
@@ -77,8 +77,6 @@ app.post('/api/login', async (req, res) => {
       }
     );
 
-    console.log('Login response status:', loginResponse.status);
-    console.log('Login response headers:', loginResponse.headers);
 
     if (loginResponse.status === 302) {
       const sessionCookies = loginResponse.headers['set-cookie'];
@@ -252,7 +250,6 @@ function calculateDuration(start, end) {
   const durationMinutes = ((endHour * 60 + endMin) - (startHour * 60 + startMin));
   return durationMinutes >= 0 ? durationMinutes : (24 * 60) + durationMinutes;
 }
-
 
 // Create log endpoint
 app.post('/api/logs/create/:createLogId', async (req, res) => {

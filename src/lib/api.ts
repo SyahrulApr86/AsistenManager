@@ -3,24 +3,28 @@ import { Lowongan, Log, LogFormData } from '../types/log';
 
 const API_URL = 'http://localhost:3001/api';
 
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: true
+});
+
 export async function getLowongan(sessionId: string, csrfToken: string): Promise<Lowongan[]> {
-  const response = await axios.get(`${API_URL}/lowongan`, {
+  const response = await api.get('/lowongan', {
     headers: {
       Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,
       'X-CSRFToken': csrfToken
-    },
-    withCredentials: true
+    }
   });
   return response.data;
 }
 
 export async function getLogs(sessionId: string, csrfToken: string, logId: string): Promise<Log[]> {
-  const response = await axios.get(`${API_URL}/logs/${logId}`, {
+  const response = await api.get(`/logs/${logId}`, {
     headers: {
       Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,
       'X-CSRFToken': csrfToken
-    },
-    withCredentials: true
+    }
   });
   return response.data;
 }
@@ -31,12 +35,11 @@ export async function createLog(
   createLogId: string, 
   data: LogFormData
 ): Promise<void> {
-  await axios.post(`${API_URL}/logs/create/${createLogId}`, data, {
+  await api.post(`/logs/create/${createLogId}`, data, {
     headers: {
       Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,
       'X-CSRFToken': csrfToken
-    },
-    withCredentials: true
+    }
   });
 }
 
@@ -46,12 +49,11 @@ export async function updateLog(
   logId: string, 
   data: LogFormData
 ): Promise<void> {
-  await axios.put(`${API_URL}/logs/update/${logId}`, data, {
+  await api.put(`/logs/update/${logId}`, data, {
     headers: {
       Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,
       'X-CSRFToken': csrfToken
-    },
-    withCredentials: true
+    }
   });
 }
 
@@ -60,11 +62,10 @@ export async function deleteLog(
   csrfToken: string, 
   logId: string
 ): Promise<void> {
-  await axios.delete(`${API_URL}/logs/delete/${logId}`, {
+  await api.delete(`/logs/delete/${logId}`, {
     headers: {
       Cookie: `sessionid=${sessionId}; csrftoken=${csrfToken}`,
       'X-CSRFToken': csrfToken
-    },
-    withCredentials: true
+    }
   });
 }
