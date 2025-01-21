@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginForm from './components/LoginForm';
 import Dashboard from './components/Dashboard';
+import VacancyLogs from './components/VacancyLogs';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -28,6 +29,11 @@ function App() {
           <Route path="/dashboard" element={
             <PrivateRoute>
               <Dashboard />
+            </PrivateRoute>
+          } />
+          <Route path="/vacancy/:id" element={
+            <PrivateRoute>
+              <VacancyLogs />
             </PrivateRoute>
           } />
         </Routes>

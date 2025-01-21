@@ -1,44 +1,47 @@
 import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Home, Calendar, DollarSign, User, LogOut, Eye } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Home, Calendar, DollarSign, User, LogOut, ArrowLeft } from 'lucide-react';
+import { Log } from '../types/log';
 import axios from 'axios';
-import { Lowongan } from '../types/log';
 import toast from 'react-hot-toast';
 
-export default function Dashboard() {
+export default function VacancyLogs() {
+  const { id } = useParams<{ id: string }>();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [vacancies, setVacancies] = useState<Lowongan[]>([]);
+  const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchVacancies = async () => {
+    const fetchLogs = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/lowongan', {
+        const response = await axios.get(`http://localhost:3001/api/logs/${id}`, {
           headers: {
             'Cookie': `sessionid=${user?.sessionId}; csrftoken=${user?.csrfToken}`
-          },
+          }
         });
-        setVacancies(response.data);
+        setLogs(response.data);
       } catch (error) {
-        toast.error('Failed to fetch vacancies');
-        console.error('Error fetching vacancies:', error);
+        toast.error('Failed to fetch logs');
+        console.error('Error fetching logs:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchVacancies();
-  }, [user]);
+    if (id) {
+      fetchLogs();
+    }
+  }, [id, user]);
 
   const handleLogout = async () => {
     await signOut();
     navigate('/');
   };
 
-  const handleViewLogs = (logId: string) => {
-    navigate(`/vacancy/${logId}`);
+  const handleBack = () => {
+    navigate('/dashboard');
   };
 
   return (
@@ -93,68 +96,59 @@ export default function Dashboard() {
           <nav className="py-4">
             <ol className="flex items-center space-x-2 text-sm text-gray-500">
               <li>
-                <a href="#" className="hover:text-gray-700">Home</a>
+                <button onClick={handleBack} className="hover:text-gray-700 flex items-center">
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  Back to Dashboard
+                </button>
               </li>
               <li>
                 <span className="mx-2">/</span>
               </li>
-              <li className="text-gray-700">Dashboard</li>
+              <li className="text-gray-700">Vacancy Logs</li>
             </ol>
           </nav>
 
-          {/* Welcome Section */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Welcome, {user?.username}!
-            </h2>
-            <p className="text-gray-600">Here are your accepted vacancies:</p>
-          </div>
-
-          {/* Vacancies Table */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Accepted Vacancies</h3>
+          {/* Logs Table */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Logs</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mata Kuliah</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun Ajaran</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dosen</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Mulai</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Selesai</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durasi (Menit)</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi Tugas</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                      <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
                         Loading...
                       </td>
                     </tr>
-                  ) : vacancies.length === 0 ? (
+                  ) : logs.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
-                        No vacancies found
+                      <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
+                        No logs found
                       </td>
                     </tr>
                   ) : (
-                    vacancies.map((vacancy) => (
-                      <tr key={vacancy.LogID}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vacancy.No}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vacancy['Mata Kuliah']}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vacancy.Semester}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vacancy['Tahun Ajaran']}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vacancy.Dosen}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => handleViewLogs(vacancy.LogID)}
-                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Logs
-                          </button>
-                        </td>
+                    logs.map((log) => (
+                      <tr key={log.LogID}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.No}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.Tanggal}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log['Jam Mulai']}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log['Jam Selesai']}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log['Durasi (Menit)']}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.Kategori}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">{log['Deskripsi Tugas']}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.Status}</td>
                       </tr>
                     ))
                   )}
