@@ -80,12 +80,12 @@ export default function Dashboard() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead>
           <tr>
-            <th scope="col" className="table-header w-12">#</th>
-            <th scope="col" className="table-header">Course</th>
-            <th scope="col" className="table-header w-24">Semester</th>
-            <th scope="col" className="table-header w-28">Year</th>
-            <th scope="col" className="table-header">Lecturer</th>
-            <th scope="col" className="table-header w-28">Actions</th>
+            <th scope="col" className="table-header w-12 text-center">#</th>
+            <th scope="col" className="table-header text-center">Course</th>
+            <th scope="col" className="table-header w-24 text-center">Semester</th>
+            <th scope="col" className="table-header w-28 text-center">Year</th>
+            <th scope="col" className="table-header text-center">Lecturer</th>
+            <th scope="col" className="table-header w-28 text-center">Actions</th>
           </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -113,8 +113,8 @@ export default function Dashboard() {
                     <td className="table-cell-course">
                       {vacancy['Mata Kuliah']}
                     </td>
-                    <td className="table-cell">{vacancy.Semester}</td>
-                    <td className="table-cell">{vacancy['Tahun Ajaran']}</td>
+                    <td className="table-cell text-center">{vacancy.Semester}</td>
+                    <td className="table-cell text-center">{vacancy['Tahun Ajaran']}</td>
                     <td className="table-cell-lecturer">
                       <div className="lecturer-list">
                         {vacancy.Dosen.split(',').map((lecturer, index) => (
@@ -124,7 +124,7 @@ export default function Dashboard() {
                         ))}
                       </div>
                     </td>
-                    <td className="table-cell">
+                    <td className="table-cell text-center">
                       <button
                           onClick={() => handleViewLogs(vacancy.LogID)}
                           className="btn-primary py-1 px-3"
