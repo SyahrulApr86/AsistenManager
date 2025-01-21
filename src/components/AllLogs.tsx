@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, ClipboardList, Clock, Pencil, Trash2, BookOpen } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Clock, Pencil, Trash2, BookOpen, Calendar as CalendarIcon } from 'lucide-react';
 import { Log, Lowongan } from '../types/log';
 import toast from 'react-hot-toast';
 import { getLogs, getLowongan, deleteLog } from '../lib/api';
@@ -10,6 +10,7 @@ import Footer from './shared/Footer';
 import Table from './shared/Table';
 import StatsCard from './shared/StatsCard';
 import LogForm from './LogForm';
+import Calendar from './Calendar';
 
 interface CombinedLog extends Log {
   'Mata Kuliah': string;
@@ -30,6 +31,7 @@ export default function AllLogs() {
   const [showForm, setShowForm] = useState(false);
   const [selectedLog, setSelectedLog] = useState<Log | null>(null);
   const [selectedVacancy, setSelectedVacancy] = useState<VacancyWithLogs | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
 
   const fetchData = async () => {
     if (!user?.sessionId || !user?.csrfToken) {
@@ -241,10 +243,26 @@ export default function AllLogs() {
               Back to Dashboard
             </button>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <StatsCard title="Total Logs" value={logs.length} icon={ClipboardList} />
               <StatsCard title="Total Duration" value={`${getTotalDuration()} minutes`} icon={Clock} />
               <StatsCard title="Active Positions" value={activeVacancies.length} icon={BookOpen} />
+              <button
+                  onClick={() => setViewMode(viewMode === 'table' ? 'calendar' : 'table')}
+                  className="card p-6 hover:shadow-xl transition-shadow duration-300 flex items-center justify-between"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-600">View Mode</p>
+                  <p className="text-2xl font-bold text-indigo-600">
+                    {viewMode === 'table' ? 'Table' : 'Calendar'}
+                  </p>
+                </div>
+                {viewMode === 'table' ? (
+                    <CalendarIcon className="h-8 w-8 text-indigo-600" />
+                ) : (
+                    <ClipboardList className="h-8 w-8 text-indigo-600" />
+                )}
+              </button>
             </div>
 
             <div className="card p-8 mb-8">
@@ -271,12 +289,27 @@ export default function AllLogs() {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-900">All Activity Logs</h3>
               </div>
-              <Table
-                  columns={columns}
-                  data={logs}
-                  isLoading={loading}
-                  emptyMessage="No logs found"
-              />
+
+              {viewMode === 'table' ? (
+                  <Table
+                      columns={columns}
+                      data={logs}
+                      isLoading={loading}
+                      emptyMessage="No logs found"
+                  />
+              ) : (
+                  <Calendar
+                      logs={logs}
+                      onEventClick={(log) => {
+                        const vacancy = activeVacancies.find(v => v['Mata Kuliah'] === log['Mata Kuliah']);
+                        if (vacancy) {
+                          setSelectedVacancy(vacancy);
+                          setSelectedLog(log);
+                          setShowForm(true);
+                        }
+                      }}
+                  />
+              )}
             </div>
           </div>
         </div>

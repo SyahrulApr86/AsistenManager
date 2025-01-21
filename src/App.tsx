@@ -6,6 +6,7 @@ import LoginForm from './components/LoginForm';
 import Dashboard from './components/Dashboard';
 import VacancyLogs from './components/VacancyLogs';
 import AllLogs from './components/AllLogs';
+import CalendarView from "./components/CalendarView.tsx";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -40,6 +41,11 @@ function App() {
           <Route path="/all-logs" element={
             <PrivateRoute>
               <AllLogs />
+            </PrivateRoute>
+          } />
+          <Route path="/calendar" element={
+            <PrivateRoute>
+              <CalendarView />
             </PrivateRoute>
           } />
         </Routes>

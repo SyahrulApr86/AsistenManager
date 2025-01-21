@@ -87,3 +87,188 @@
     @apply action-button text-red-600 hover:bg-red-50 hover:text-red-800 disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed;
   }
 }
+
+/* FullCalendar Styles */
+.calendar-container .fc {
+  @apply font-sans;
+}
+
+.calendar-container .fc .fc-toolbar.fc-header-toolbar {
+  @apply mb-4;
+}
+
+.calendar-container .fc .fc-toolbar-title {
+  @apply text-xl font-semibold text-gray-900;
+}
+
+.calendar-container .fc .fc-button {
+  @apply px-4 py-2 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200;
+}
+
+.calendar-container .fc .fc-button-primary {
+  @apply bg-indigo-600 border-transparent text-white hover:bg-indigo-700;
+}
+
+.calendar-container .fc .fc-button-primary:not(:disabled).fc-button-active,
+.calendar-container .fc .fc-button-primary:not(:disabled):active {
+  @apply bg-indigo-800;
+}
+
+.calendar-container .fc .fc-daygrid-day-number,
+.calendar-container .fc .fc-col-header-cell-cushion {
+  @apply text-gray-700;
+}
+
+.calendar-container .fc .fc-event {
+  @apply cursor-pointer border-0 rounded shadow-sm;
+}
+
+.calendar-container .fc .fc-event-main {
+  @apply p-1 text-xs;
+}
+
+.calendar-container .fc .fc-timegrid-slot {
+  @apply h-12;
+}
+
+.calendar-container .fc .fc-timegrid-axis {
+  @apply text-xs text-gray-500;
+}
+
+.calendar-container .fc .fc-timegrid-slot-label {
+  @apply text-xs text-gray-500;
+}
+
+.calendar-container .fc .fc-today-button {
+  @apply bg-gray-600 hover:bg-gray-700;
+}
+
+.calendar-container .fc .fc-day-today {
+  @apply bg-indigo-50;
+}
+
+.calendar-container .fc .fc-highlight {
+  @apply bg-indigo-100;
+}
+
+/* FullCalendar Core Styles */
+.fc {
+  --fc-small-font-size: .85em;
+  --fc-page-bg-color: #fff;
+  --fc-neutral-bg-color: rgba(208, 208, 208, 0.3);
+  --fc-neutral-text-color: #808080;
+  --fc-border-color: #ddd;
+  --fc-button-text-color: #fff;
+  --fc-button-bg-color: #2C3E50;
+  --fc-button-border-color: #2C3E50;
+  --fc-button-hover-bg-color: #1e2b37;
+  --fc-button-hover-border-color: #1a252f;
+  --fc-button-active-bg-color: #1a252f;
+  --fc-button-active-border-color: #151e27;
+  --fc-event-bg-color: #3788d8;
+  --fc-event-border-color: #3788d8;
+  --fc-event-text-color: #fff;
+  --fc-event-selected-overlay-color: rgba(0, 0, 0, 0.25);
+  --fc-more-link-bg-color: #d0d0d0;
+  --fc-more-link-text-color: inherit;
+  --fc-event-resizer-thickness: 8px;
+  --fc-event-resizer-dot-total-width: 8px;
+  --fc-event-resizer-dot-border-width: 1px;
+  --fc-non-business-color: rgba(215, 215, 215, 0.3);
+  --fc-bg-event-color: rgb(143, 223, 130);
+  --fc-bg-event-opacity: 0.3;
+  --fc-highlight-color: rgba(188, 232, 241, 0.3);
+  --fc-today-bg-color: rgba(255, 220, 40, 0.15);
+  --fc-now-indicator-color: red;
+}
+
+.fc-direction-ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: 1px solid var(--fc-border-color);
+}
+
+.fc-scrollgrid {
+  border-collapse: separate;
+  border-right-width: 0;
+  border-bottom-width: 0;
+}
+
+.fc-scrollgrid {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.fc-scrollgrid table {
+  border-top-style: hidden;
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+
+.fc-scrollgrid > * > tr > * {
+  border-bottom: 0;
+}
+
+.fc-scrollgrid-section > * {
+  border-top: 0;
+}
+
+.fc-scrollgrid-section-header > *,
+.fc-scrollgrid-section-footer > * {
+  border-bottom: 0;
+}
+
+.fc-scrollgrid-section-body table,
+.fc-scrollgrid-section-footer table {
+  border-bottom-style: hidden;
+}
+
+.fc-col-header-cell-cushion {
+  display: inline-block;
+  padding: 2px 4px;
+}
+
+.fc-timegrid-slot-label-cushion {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.fc-timegrid-axis-cushion {
+  padding: 0 4px;
+}
+
+.fc-timegrid-now-indicator-line {
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  right: 0;
+  border-style: solid;
+  border-color: var(--fc-now-indicator-color);
+  border-width: 1px 0 0;
+}
+
+.fc-timegrid-now-indicator-arrow {
+  position: absolute;
+  z-index: 4;
+  margin-top: -5px;
+  border-style: solid;
+  border-color: var(--fc-now-indicator-color);
+}
+
+.fc-direction-ltr .fc-timegrid-now-indicator-arrow {
+  left: 0;
+  border-width: 5px 0 5px 6px;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.fc-direction-rtl .fc-timegrid-now-indicator-arrow {
+  right: 0;
+  border-width: 5px 6px 5px 0;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}

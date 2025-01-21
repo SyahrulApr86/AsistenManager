@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { X, Calendar } from 'lucide-react';
+import { X, Calendar as CalendarIcon } from 'lucide-react';
 import { Log, LogFormData, LOG_CATEGORIES } from '../types/log';
 import { createLog, updateLog } from '../lib/api';
+import Calendar from './Calendar';
 import toast from 'react-hot-toast';
 
 interface LogFormProps {
@@ -29,6 +30,8 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showCalendarView, setShowCalendarView] = useState(false);
+  const [calendarLogs, setCalendarLogs] = useState<Log[]>([]);
   const [formData, setFormData] = useState<LogFormData>({
     kategori_log: '',
     deskripsi: '',
@@ -77,6 +80,12 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
       // Set today's date as default for new logs
       const today = new Date();
       setSelectedDate(today);
+    }
+  }, [log]);
+
+  useEffect(() => {
+    if (log) {
+      setCalendarLogs([log]);
     }
   }, [log]);
 
@@ -228,6 +237,39 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <button
+                  type="button"
+                  onClick={() => setShowCalendarView(!showCalendarView)}
+                  className="btn-secondary"
+              >
+                <CalendarIcon className="h-4 w-4 mr-1" />
+                {showCalendarView ? 'Hide Calendar' : 'Show Calendar'}
+              </button>
+            </div>
+
+            {showCalendarView && (
+                <div className="mb-6">
+                  <Calendar
+                      logs={calendarLogs}
+                      onEventClick={(selectedLog) => {
+                        if (selectedLog) {
+                          const [day, month, year] = selectedLog.Tanggal.split('-');
+                          const [startHour, startMinute] = selectedLog['Jam Mulai'].split(':');
+                          const [endHour, endMinute] = selectedLog['Jam Selesai'].split(':');
+
+                          setFormData({
+                            ...formData,
+                            tanggal: { day, month, year },
+                            waktu_mulai: { hour: startHour, minute: startMinute },
+                            waktu_selesai: { hour: endHour, minute: endMinute }
+                          });
+                        }
+                      }}
+                  />
+                </div>
+            )}
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -273,7 +315,7 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
                         placeholder="Select date"
                         required
                     />
-                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
 
                   {showCalendar && (
