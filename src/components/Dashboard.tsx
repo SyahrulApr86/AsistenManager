@@ -53,7 +53,7 @@ export default function Dashboard() {
           setActiveVacancies(active);
           setInactiveVacancies(inactive);
 
-          // Fetch logs for active vacancies
+          // Fetch logs for active vacancies only
           const logs: Log[] = [];
           for (const vacancy of active) {
             const { logs: vacancyLogs } = await getLogs(user.sessionId, user.csrfToken, vacancy.LogID);
@@ -62,7 +62,7 @@ export default function Dashboard() {
               'Mata Kuliah': vacancy['Mata Kuliah']
             })));
           }
-          setAllLogs(logs);
+          setAllLogs(logs); // These are now only logs from active positions
         }
       } catch (error) {
         console.error('Error fetching vacancies:', error);

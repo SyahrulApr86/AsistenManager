@@ -24,9 +24,11 @@ export default function CalendarView() {
             }
 
             try {
+                // Fetch ALL vacancies for the complete log history
                 const vacancies = await getLowongan(user.sessionId, user.csrfToken);
                 const allLogs: Log[] = [];
 
+                // Get logs from all vacancies, not just active ones
                 for (const vacancy of vacancies) {
                     const { logs: vacancyLogs } = await getLogs(user.sessionId, user.csrfToken, vacancy.LogID);
                     allLogs.push(...vacancyLogs.map(log => ({

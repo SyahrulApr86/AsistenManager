@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { X, Calendar as CalendarIcon } from 'lucide-react';
 import { Log, LogFormData, LOG_CATEGORIES } from '../types/log';
-import { createLog, updateLog } from '../lib/api';
+import { createLog, updateLog, getLowongan, getLogs } from '../lib/api';
 import Calendar from './Calendar';
 import toast from 'react-hot-toast';
 
@@ -79,10 +79,43 @@ export default function LogForm({ vacancy, log, onClose, onSave }: LogFormProps)
   }, [log]);
 
   useEffect(() => {
-    if (log) {
-      setCalendarLogs([log]);
-    }
-  }, [log]);
+    if (!user?.sessionId || !user?.csrfToken) return;
+
+    // Fetch logs from active positions only for the calendar view
+    const fetchActiveLogs = async () => {
+      try {
+        const vacancies = await getLowongan(user.sessionId, user.csrfToken);
+        if (vacancies.length > 0) {
+          const sortedVacancies = [...vacancies].sort((a, b) => {
+            const yearComparison = b['Tahun Ajaran'].localeCompare(a['Tahun Ajaran']);
+            if (yearComparison !== 0) return yearComparison;
+            return b.Semester.localeCompare(a.Semester);
+          });
+
+          const latestYear = sortedVacancies[0]['Tahun Ajaran'];
+          const latestSemester = sortedVacancies[0].Semester;
+
+          const active = sortedVacancies.filter(
+              v => v['Tahun Ajaran'] === latestYear && v.Semester === latestSemester
+          );
+
+          const logs: Log[] = [];
+          for (const vacancy of active) {
+            const { logs: vacancyLogs } = await getLogs(user.sessionId, user.csrfToken, vacancy.LogID);
+            logs.push(...vacancyLogs.map(log => ({
+              ...log,
+              'Mata Kuliah': vacancy['Mata Kuliah']
+            })));
+          }
+          setCalendarLogs(logs);
+        }
+      } catch (error) {
+        console.error('Error fetching logs:', error);
+      }
+    };
+
+    fetchActiveLogs();
+  }, [user]);
 
   const validateTime = () => {
     const startTime = parseInt(formData.waktu_mulai.hour) * 60 + parseInt(formData.waktu_mulai.minute);
