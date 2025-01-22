@@ -1,6 +1,6 @@
 # AsistenManager
 
-AsistenManager is a comprehensive web application designed to help teaching assistants manage their schedules, logs, and financial records efficiently. It provides a modern, intuitive interface for tracking teaching activities, managing multiple courses, and monitoring payments.
+AsistenManager is a comprehensive web application designed to help teaching assistants manage their schedules, logs, and financial records efficiently. It provides a modern, intuitive interface for tracking teaching activities, managing multiple courses, and monitoring payments. This application wraps the web Siasisten, making it specifically tailored for students of the Faculty of Computer Science, Universitas Indonesia.
 
 ![img.png](media/img.png)
 
