@@ -1,4 +1,4 @@
-name: CI/CD - Markify App
+name: CI/CD - AsistenManager App
 
 on:
   push:
@@ -25,12 +25,12 @@ jobs:
       - name: Build and Tag Docker Image
         run: |
           echo "Building Docker image..."
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/markify-app:latest .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/asisten-manager-app:latest .
 
       - name: Push Docker Image to Docker Hub
         run: |
           echo "Pushing Docker image to Docker Hub..."
-          docker push ${{ secrets.DOCKER_USERNAME }}/markify-app:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/asisten-manager-app:latest
 
       - name: Create GitHub Deployment
         id: create_deployment
@@ -67,17 +67,17 @@ jobs:
           port: 22
           script: |
             echo "Pulling and deploying Docker image on VPS..."
-            docker pull ${{ secrets.DOCKER_USERNAME }}/markify-app:latest
-            docker stop markify-app || true
-            docker rm markify-app || true
-            docker run -d --name markify-app \
+            docker pull ${{ secrets.DOCKER_USERNAME }}/asisten-manager-app:latest
+            docker stop asisten-manager-app || true
+            docker rm asisten-manager-app || true
+            docker run -d --name asisten-manager-app \
               -p 5173:5173 \
               -p 3001:3001 \
               -e VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
               -e VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} \
               -e ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }} \
               -e VITE_API_URL=${{ secrets.VITE_API_URL }} \
-              ${{ secrets.DOCKER_USERNAME }}/markify-app:latest
+              ${{ secrets.DOCKER_USERNAME }}/asisten-manager-app:latest
             docker system prune -f
 
       - name: Set Deployment Status as Success
