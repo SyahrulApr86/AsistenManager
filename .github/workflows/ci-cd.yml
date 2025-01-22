@@ -76,6 +76,7 @@ jobs:
               -e VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
               -e VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} \
               -e ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }} \
+              -e VITE_API_URL=${{ secrets.VITE_API_URL }} \
               ${{ secrets.DOCKER_USERNAME }}/markify-app:latest
             docker system prune -f
 

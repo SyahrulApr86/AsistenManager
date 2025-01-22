@@ -11,6 +11,7 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
       - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+      - VITE_API_URL=${VITE_API_URL}
     volumes:
       - /app/node_modules
     command: npm run dev

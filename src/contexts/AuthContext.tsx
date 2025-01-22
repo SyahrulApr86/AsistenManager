@@ -10,6 +10,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -41,9 +42,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (username: string, password: string) => {
     try {
-      const response = await axios.post('http://localhost:3001/api/login', {
+      const response = await axios.post(`${API_BASE_URL}/api/login`, {
         username,
         password
+      }, {
+        withCredentials: true // Penting untuk cookie
       });
 
       if (!response.data.success) {
