@@ -136,10 +136,12 @@ app.get('/api/lowongan', async (req, res) => {
     const sessionid = req.headers.cookie?.match(/sessionid=([^;]+)/)?.[1];
     const csrftoken = req.headers.cookie?.match(/csrftoken=([^;]+)/)?.[1];
 
+    console.log("Headers:", req.headers.cookie);
+
     if (!sessionid || !csrftoken) {
       throw new Error('Session cookies not found');
     }
-
+``
     const response = await axios.get(`${SIASISTEN_URL}/log/listLowonganAst`, {
       headers: {
         ...COMMON_HEADERS,
@@ -356,7 +358,7 @@ app.post('/api/finance', async (req, res) => {
     const sessionid = req.headers.cookie?.match(/sessionid=([^;]+)/)?.[1];
     const csrftoken = req.headers.cookie?.match(/csrftoken=([^;]+)/)?.[1];
     const username = req.headers.cookie?.match(/username=([^;]+)/)?.[1];
-
+    console.log("Headers:", req.headers.cookie);
     if (!sessionid || !csrftoken || !username) {
       throw new Error('Session cookies not found');
     }
