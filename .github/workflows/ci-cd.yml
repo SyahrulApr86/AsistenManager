@@ -71,10 +71,13 @@ jobs:
             docker stop markify-app || true
             docker rm markify-app || true
             docker run -d --name markify-app \
+              -p 5173:5173 \
+              -p 3001:3001 \
               -e VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
               -e VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} \
-              -p 5173:5173 -p 3001:3001 \
+              -e ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }} \
               ${{ secrets.DOCKER_USERNAME }}/markify-app:latest
+            docker system prune -f
 
       - name: Set Deployment Status as Success
         run: |
