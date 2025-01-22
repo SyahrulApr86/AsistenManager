@@ -12,13 +12,14 @@ import { Pie } from 'react-chartjs-2';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
+// Status colors based on the flow: reported -> approved by admin/lecturer -> processed
 const STATUS_COLORS = {
-  'tidak disetujui admin': '#EF4444',
-  'disetujui admin': '#10B981',
-  'dilaporkan': '#F59E0B',
-  'diproses': '#3B82F6',
-  'disetujui dosen/TA': '#6366F1',
-  'tidak disetujui dosen/TA': '#DC2626'
+  'diproses': '#10B981', // Green for processed (final state)
+  'disetujui admin': '#3B82F6', // Blue for admin approval
+  'disetujui dosen/TA': '#6366F1', // Indigo for lecturer approval
+  'dilaporkan': '#F59E0B', // Yellow for reported
+  'tidak disetujui admin': '#EF4444', // Red for admin rejection
+  'tidak disetujui dosen/TA': '#DC2626' // Dark red for lecturer rejection
 };
 
 export default function FinanceView() {
@@ -78,7 +79,8 @@ export default function FinanceView() {
     const totals: Record<string, number> = {};
     let total = 0;
 
-    data.forEach(entry => {
+    // Only process entries with non-empty status
+    data.filter(entry => entry.Status.trim() !== '').forEach(entry => {
       const amount = cleanCurrency(entry.Jumlah_Pembayaran);
       const status = entry.Status.toLowerCase();
       totals[status] = (totals[status] || 0) + amount;
@@ -90,12 +92,26 @@ export default function FinanceView() {
 
   const getChartData = (data: FinanceData[]) => {
     const { statusTotals, total } = calculateStatusTotals(data);
-    const labels = Object.keys(statusTotals);
-    const values = Object.values(statusTotals);
-    const colors = labels.map(label => STATUS_COLORS[label as keyof typeof STATUS_COLORS] || '#CBD5E1');
+
+    // Sort statuses by the process flow
+    const statusOrder = [
+      'dilaporkan',
+      'disetujui admin',
+      'disetujui dosen/TA',
+      'diproses',
+      'tidak disetujui admin',
+      'tidak disetujui dosen/TA'
+    ];
+
+    const sortedStatuses = Object.keys(statusTotals).sort((a, b) => {
+      return statusOrder.indexOf(a) - statusOrder.indexOf(b);
+    });
+
+    const values = sortedStatuses.map(status => statusTotals[status]);
+    const colors = sortedStatuses.map(status => STATUS_COLORS[status as keyof typeof STATUS_COLORS]);
 
     return {
-      labels,
+      labels: sortedStatuses,
       datasets: [
         {
           data: values,
@@ -109,20 +125,38 @@ export default function FinanceView() {
 
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'right' as const,
         labels: {
+          padding: 20,
           generateLabels: (chart: any) => {
             const { statusTotals, total } = calculateStatusTotals(financeData);
-            return Object.entries(statusTotals).map(([label, value]) => ({
-              text: `${label} (${((value / total) * 100).toFixed(1)}%) - ${formatCurrency(value)}`,
-              fillStyle: STATUS_COLORS[label as keyof typeof STATUS_COLORS] || '#CBD5E1',
-              strokeStyle: STATUS_COLORS[label as keyof typeof STATUS_COLORS] || '#CBD5E1',
-              lineWidth: 1,
-              hidden: false
-            }));
-          }
+            const statusOrder = [
+              'dilaporkan',
+              'disetujui admin',
+              'disetujui dosen/TA',
+              'diproses',
+              'tidak disetujui admin',
+              'tidak disetujui dosen/TA'
+            ];
+
+            return Object.keys(statusTotals)
+                .sort((a, b) => statusOrder.indexOf(a) - statusOrder.indexOf(b))
+                .map(label => ({
+                  text: `${label} (${((statusTotals[label] / total) * 100).toFixed(1)}%)`,
+                  fillStyle: STATUS_COLORS[label as keyof typeof STATUS_COLORS],
+                  strokeStyle: STATUS_COLORS[label as keyof typeof STATUS_COLORS],
+                  lineWidth: 1,
+                  hidden: false
+                }));
+          },
+          font: {
+            size: 12
+          },
+          boxWidth: 15,
+          boxHeight: 15,
         }
       },
       tooltip: {
@@ -131,9 +165,21 @@ export default function FinanceView() {
             const value = context.raw;
             const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
             const percentage = ((value / total) * 100).toFixed(1);
-            return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+            return `${formatCurrency(value)} (${percentage}%)`;
+          },
+          title: (tooltipItems: any[]) => {
+            return tooltipItems[0].label;
           }
-        }
+        },
+        titleFont: {
+          size: 14,
+          weight: 'bold'
+        },
+        bodyFont: {
+          size: 13
+        },
+        padding: 12,
+        boxPadding: 6
       }
     }
   };
@@ -153,7 +199,10 @@ export default function FinanceView() {
             selectedYear,
             selectedMonth
         );
-        setFinanceData(currentData);
+
+        // Filter out entries with empty status
+        const validData = currentData.filter(entry => entry.Status.trim() !== '');
+        setFinanceData(validData);
       } catch (error) {
         console.error('Error fetching finance data:', error);
         toast.error('Failed to fetch finance data');
@@ -179,7 +228,8 @@ export default function FinanceView() {
           selectedYear,
           selectedMonth
       );
-      setFinanceData(currentData);
+      const validData = currentData.filter(entry => entry.Status.trim() !== '');
+      setFinanceData(validData);
       toast.success('Data refreshed successfully');
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -202,16 +252,24 @@ export default function FinanceView() {
       width: 'w-32',
       centerHeader: true,
       centerData: true,
-      render: (value: string) => (
-          <span className={`badge ${
-              value.toLowerCase().includes('tidak disetujui') ? 'badge-red' :
-                  value.toLowerCase().includes('diproses') ? 'badge-blue' :
-                      value.toLowerCase().includes('disetujui') ? 'badge-green' :
-                          'badge-yellow'
-          }`}>
-          {value}
-        </span>
-      )
+      render: (value: string) => {
+        const status = value.toLowerCase();
+        let badgeClass = 'badge-yellow'; // Default for 'dilaporkan'
+
+        if (status === 'diproses') {
+          badgeClass = 'badge-green';
+        } else if (status.includes('disetujui')) {
+          badgeClass = 'badge-blue';
+        } else if (status.includes('tidak disetujui')) {
+          badgeClass = 'badge-red';
+        }
+
+        return (
+            <span className={`badge ${badgeClass}`}>
+            {value}
+          </span>
+        );
+      }
     }
   ];
 
@@ -236,66 +294,64 @@ export default function FinanceView() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-              <div className="lg:col-span-2 card p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-gray-900">Payment History</h3>
-                  <div className="flex items-center space-x-4">
-                    <select
-                        value={selectedYear}
-                        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                        className="input-field w-32"
-                        disabled={loading}
-                    >
-                      {years.map(year => (
-                          <option key={year} value={year}>{year}</option>
-                      ))}
-                    </select>
-                    <select
-                        value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                        className="input-field w-40"
-                        disabled={loading}
-                    >
-                      {months.map(month => (
-                          <option key={month.value} value={month.value}>
-                            {month.label}
-                          </option>
-                      ))}
-                    </select>
-                    <button
-                        onClick={handleRefresh}
-                        disabled={loading || refreshing}
-                        className="btn-secondary"
-                    >
-                      <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                      Refresh
-                    </button>
-                  </div>
+            <div className="card p-8 mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Status Breakdown</h3>
+                  <p className="text-gray-600">Total: {formatCurrency(total)}</p>
                 </div>
+                <div className="flex items-center space-x-4">
+                  <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                      className="input-field w-32"
+                      disabled={loading}
+                  >
+                    {years.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                  <select
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                      className="input-field w-40"
+                      disabled={loading}
+                  >
+                    {months.map(month => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                    ))}
+                  </select>
+                  <button
+                      onClick={handleRefresh}
+                      disabled={loading || refreshing}
+                      className="btn-secondary"
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                </div>
+              </div>
 
+              <div className="h-[400px] mb-8">
+                {financeData.length > 0 ? (
+                    <Pie data={getChartData(financeData)} options={chartOptions} />
+                ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      No data available
+                    </div>
+                )}
+              </div>
+
+              <div className="mt-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-6">Payment Details</h3>
                 <Table
                     columns={columns}
                     data={financeData}
                     isLoading={loading}
                     emptyMessage="No payment records found for the selected period"
                 />
-              </div>
-
-              <div className="card p-8">
-                <div className="mb-4">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Status Breakdown</h3>
-                  <p className="text-gray-600">Total: {formatCurrency(total)}</p>
-                </div>
-                {financeData.length > 0 ? (
-                    <div className="relative">
-                      <Pie data={getChartData(financeData)} options={chartOptions} />
-                    </div>
-                ) : (
-                    <div className="flex items-center justify-center h-64 text-gray-500">
-                      No data available
-                    </div>
-                )}
               </div>
             </div>
           </div>

@@ -344,123 +344,236 @@ app.post('/api/finance', async (req, res) => {
       throw new Error('Session cookies not found');
     }
 
-    // First check if we have data in the database
-    const { data: dbData, error: dbError } = await supabase
-        .from('finance_data')
-        .select('*')
-        .eq('username', decodeURIComponent(username))
-        .eq('year', year)
-        .eq('month', month);
-
-    if (dbError) {
-      console.error('Database error:', dbError);
-      throw new Error('Database error');
-    }
-
-    // For current month and previous 2 months, always fetch fresh data
+    const decodedUsername = decodeURIComponent(username);
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1;
-    const isRecentMonth = (
-        year === currentYear && month >= currentMonth - 2 && month <= currentMonth
-    ) || (
-        year === currentYear - 1 &&
-        month >= 12 - (2 - (currentMonth - 1)) &&
-        currentMonth <= 2
-    );
 
-    if (!isRecentMonth && dbData && dbData.length > 0) {
-      // Return cached data for older months
-      return res.json(dbData.map(item => ({
-        NPM: item.npm,
-        Asisten: item.asisten,
-        Bulan: item.bulan,
-        Mata_Kuliah: item.mata_kuliah,
-        Jumlah_Jam: item.jumlah_jam,
-        Honor_Per_Jam: item.honor_per_jam,
-        Jumlah_Pembayaran: item.jumlah_pembayaran,
-        Status: item.status
-      })));
-    }
+    // Check if the requested month is within the last 3 months
+    const isRecentMonth = (year === currentYear && month >= currentMonth - 2 && month <= currentMonth) ||
+        (year === currentYear - 1 && month >= 12 - (2 - (currentMonth - 1)) && currentMonth <= 2);
 
-    const keuangan_url = "https://siasisten.cs.ui.ac.id/keuangan/listPembayaranPerAsisten";
-    const response = await axios.post(
-        keuangan_url,
-        new URLSearchParams({
-          csrfmiddlewaretoken: csrftoken,
-          tahun: year.toString(),
-          bulan: month.toString(),
-          username: decodeURIComponent(username),
-          statusid: "-1"
-        }).toString(),
-        {
-          headers: {
-            ...COMMON_HEADERS,
-            "Host": "siasisten.cs.ui.ac.id",
-            "Cookie": `csrftoken=${csrftoken}; sessionid=${sessionid}; sc_is_visitor_unique=rx12339556.1727594531.5DDD9564D24F4F8716FA6F31A7C077FC.2.2.2.2.2.2.2.2.2`,
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Cache-Control": "max-age=0",
-            "Origin": "https://siasisten.cs.ui.ac.id",
-            "Sec-Fetch-Site": "same-origin",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-User": "?1",
-            "Sec-Fetch-Dest": "document",
-            "Referer": keuangan_url
-          },
-          maxRedirects: 0,
-          validateStatus: status => status >= 200 && status < 400
-        }
-    );
+    // If it's a recent month, always fetch from web
+    if (isRecentMonth) {
+      const keuangan_url = "https://siasisten.cs.ui.ac.id/keuangan/listPembayaranPerAsisten";
+      const response = await axios.post(
+          keuangan_url,
+          new URLSearchParams({
+            csrfmiddlewaretoken: csrftoken,
+            tahun: year.toString(),
+            bulan: month.toString(),
+            username: decodedUsername,
+            statusid: "-1"
+          }).toString(),
+          {
+            headers: {
+              ...COMMON_HEADERS,
+              "Cookie": `csrftoken=${csrftoken}; sessionid=${sessionid}`,
+              "Content-Type": "application/x-www-form-urlencoded",
+              "Origin": "https://siasisten.cs.ui.ac.id",
+              "Referer": keuangan_url
+            }
+          }
+      );
 
-    const root = parse(response.data);
-    const tables = root.querySelectorAll('table');
-    const data = [];
+      const root = parse(response.data);
+      const tables = root.querySelectorAll('table');
+      const data = [];
 
-    for (const table of tables) {
-      const headers = table.querySelectorAll('th').map(th => th.text.trim());
-      if (headers.includes('NPM') && headers.includes('Asisten')) {
-        const rows = table.querySelectorAll('tr');
-        for (let i = 1; i < rows.length; i++) {
-          const cols = rows[i].querySelectorAll('td');
-          if (cols.length === 8) {
-            const entry = {
-              NPM: cols[0].text.trim(),
-              Asisten: cols[1].text.trim(),
-              Bulan: cols[2].text.trim(),
-              Mata_Kuliah: cols[3].text.trim(),
-              Jumlah_Jam: cols[4].text.trim(),
-              Honor_Per_Jam: cols[5].text.trim(),
-              Jumlah_Pembayaran: cols[6].text.trim(),
-              Status: cols[7].text.trim()
-            };
-            data.push(entry);
+      for (const table of tables) {
+        const headers = table.querySelectorAll('th').map(th => th.text.trim());
+        if (headers.includes('NPM') && headers.includes('Asisten')) {
+          const rows = table.querySelectorAll('tr');
+          for (let i = 1; i < rows.length; i++) {
+            const cols = rows[i].querySelectorAll('td');
+            if (cols.length === 8) {
+              const entry = {
+                NPM: cols[0].text.trim(),
+                Asisten: cols[1].text.trim(),
+                Bulan: cols[2].text.trim(),
+                Mata_Kuliah: cols[3].text.trim(),
+                Jumlah_Jam: cols[4].text.trim(),
+                Honor_Per_Jam: cols[5].text.trim(),
+                Jumlah_Pembayaran: cols[6].text.trim(),
+                Status: cols[7].text.trim()
+              };
+              data.push(entry);
 
-            // Update or insert into database
-            const { error: upsertError } = await supabase
-                .from('finance_data')
-                .upsert({
-                  username: decodeURIComponent(username),
-                  year,
-                  month,
-                  npm: entry.NPM,
-                  asisten: entry.Asisten,
-                  bulan: entry.Bulan,
-                  mata_kuliah: entry.Mata_Kuliah,
-                  jumlah_jam: entry.Jumlah_Jam,
-                  honor_per_jam: entry.Honor_Per_Jam,
-                  jumlah_pembayaran: entry.Jumlah_Pembayaran,
-                  status: entry.Status
-                });
+              // Update or insert into database
+              const { error: upsertError } = await supabase
+                  .from('finance_data')
+                  .upsert({
+                    username: decodedUsername,
+                    year,
+                    month,
+                    npm: entry.NPM,
+                    asisten: entry.Asisten,
+                    bulan: entry.Bulan,
+                    mata_kuliah: entry.Mata_Kuliah,
+                    jumlah_jam: entry.Jumlah_Jam,
+                    honor_per_jam: entry.Honor_Per_Jam,
+                    jumlah_pembayaran: entry.Jumlah_Pembayaran,
+                    status: entry.Status
+                  });
 
-            if (upsertError) {
-              console.error('Error upserting data:', upsertError);
+              if (upsertError) {
+                console.error('Error upserting data:', upsertError);
+              }
             }
           }
         }
       }
-    }
 
-    res.json(data);
+      // If no data found, store an empty record
+      if (data.length === 0) {
+        const { error: emptyError } = await supabase
+            .from('finance_data')
+            .upsert({
+              username: decodedUsername,
+              year,
+              month,
+              npm: '',
+              asisten: '',
+              bulan: '',
+              mata_kuliah: '',
+              jumlah_jam: '',
+              honor_per_jam: '',
+              jumlah_pembayaran: '',
+              status: ''
+            });
+
+        if (emptyError) {
+          console.error('Error storing empty record:', emptyError);
+        }
+      }
+
+      res.json(data);
+    } else {
+      // For older months, check database first
+      const { data: dbData, error: dbError } = await supabase
+          .from('finance_data')
+          .select('*')
+          .eq('username', decodedUsername)
+          .eq('year', year)
+          .eq('month', month);
+
+      if (dbError) {
+        throw new Error('Database error');
+      }
+
+      // If no data in database or only empty records, fetch from web
+      if (!dbData || dbData.length === 0 || dbData.every(record => record.status === '')) {
+        const keuangan_url = "https://siasisten.cs.ui.ac.id/keuangan/listPembayaranPerAsisten";
+        const response = await axios.post(
+            keuangan_url,
+            new URLSearchParams({
+              csrfmiddlewaretoken: csrftoken,
+              tahun: year.toString(),
+              bulan: month.toString(),
+              username: decodedUsername,
+              statusid: "-1"
+            }).toString(),
+            {
+              headers: {
+                ...COMMON_HEADERS,
+                "Cookie": `csrftoken=${csrftoken}; sessionid=${sessionid}`,
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Origin": "https://siasisten.cs.ui.ac.id",
+                "Referer": keuangan_url
+              }
+            }
+        );
+
+        const root = parse(response.data);
+        const tables = root.querySelectorAll('table');
+        const data = [];
+
+        for (const table of tables) {
+          const headers = table.querySelectorAll('th').map(th => th.text.trim());
+          if (headers.includes('NPM') && headers.includes('Asisten')) {
+            const rows = table.querySelectorAll('tr');
+            for (let i = 1; i < rows.length; i++) {
+              const cols = rows[i].querySelectorAll('td');
+              if (cols.length === 8) {
+                const entry = {
+                  NPM: cols[0].text.trim(),
+                  Asisten: cols[1].text.trim(),
+                  Bulan: cols[2].text.trim(),
+                  Mata_Kuliah: cols[3].text.trim(),
+                  Jumlah_Jam: cols[4].text.trim(),
+                  Honor_Per_Jam: cols[5].text.trim(),
+                  Jumlah_Pembayaran: cols[6].text.trim(),
+                  Status: cols[7].text.trim()
+                };
+                data.push(entry);
+
+                // Update or insert into database
+                const { error: upsertError } = await supabase
+                    .from('finance_data')
+                    .upsert({
+                      username: decodedUsername,
+                      year,
+                      month,
+                      npm: entry.NPM,
+                      asisten: entry.Asisten,
+                      bulan: entry.Bulan,
+                      mata_kuliah: entry.Mata_Kuliah,
+                      jumlah_jam: entry.Jumlah_Jam,
+                      honor_per_jam: entry.Honor_Per_Jam,
+                      jumlah_pembayaran: entry.Jumlah_Pembayaran,
+                      status: entry.Status
+                    });
+
+                if (upsertError) {
+                  console.error('Error upserting data:', upsertError);
+                }
+              }
+            }
+          }
+        }
+
+        // If no data found, store an empty record
+        if (data.length === 0) {
+          const { error: emptyError } = await supabase
+              .from('finance_data')
+              .upsert({
+                username: decodedUsername,
+                year,
+                month,
+                npm: '',
+                asisten: '',
+                bulan: '',
+                mata_kuliah: '',
+                jumlah_jam: '',
+                honor_per_jam: '',
+                jumlah_pembayaran: '',
+                status: ''
+              });
+
+          if (emptyError) {
+            console.error('Error storing empty record:', emptyError);
+          }
+        }
+
+        res.json(data);
+      } else {
+        // Return only non-empty records
+        const validData = dbData
+            .filter(record => record.status !== '')
+            .map(record => ({
+              NPM: record.npm,
+              Asisten: record.asisten,
+              Bulan: record.bulan,
+              Mata_Kuliah: record.mata_kuliah,
+              Jumlah_Jam: record.jumlah_jam,
+              Honor_Per_Jam: record.honor_per_jam,
+              Jumlah_Pembayaran: record.jumlah_pembayaran,
+              Status: record.status
+            }));
+
+        res.json(validData);
+      }
+    }
   } catch (error) {
     console.error('Error in /api/finance:', error);
     res.status(500).json({ error: error.message });
