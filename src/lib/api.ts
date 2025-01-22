@@ -14,8 +14,11 @@ const api = axios.create({
 });
 
 export async function getLowongan(sessionId: string, csrfToken: string): Promise<Lowongan[]> {
-  document.cookie = `sessionid=${sessionId}; path=/`;
-  document.cookie = `csrftoken=${csrfToken}; path=/`;
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const domain = new URL(apiUrl).hostname;
+
+  document.cookie = `sessionid=${sessionId}; path=/; domain=.${domain}`;
+  document.cookie = `csrftoken=${csrfToken}; path=/; domain=.${domain}`;
 
   const response = await api.get('/lowongan');
   return response.data;

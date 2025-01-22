@@ -136,8 +136,6 @@ app.get('/api/lowongan', async (req, res) => {
     const sessionid = req.headers.cookie?.match(/sessionid=([^;]+)/)?.[1];
     const csrftoken = req.headers.cookie?.match(/csrftoken=([^;]+)/)?.[1];
 
-    console.log("Headers:", req.headers.cookie);
-
     if (!sessionid || !csrftoken) {
       throw new Error('Session cookies not found');
     }
