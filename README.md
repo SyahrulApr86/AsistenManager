@@ -2,6 +2,8 @@
 
 AsistenManager is a comprehensive web application designed to help teaching assistants manage their schedules, logs, and financial records efficiently. It provides a modern, intuitive interface for tracking teaching activities, managing multiple courses, and monitoring payments.
 
+![img.png](media/img.png)
+
 ## Features
 
 - **Dashboard Overview**: Get a quick glance at all your teaching positions, both active and past
