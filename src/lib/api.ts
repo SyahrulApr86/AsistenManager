@@ -14,11 +14,15 @@ const api = axios.create({
 });
 
 export async function getLowongan(sessionId: string, csrfToken: string): Promise<Lowongan[]> {
-  const apiUrl = import.meta.env.VITE_API_URL;
-  const domain = new URL(apiUrl).hostname;
+  const apiUrl = new URL(import.meta.env.VITE_API_URL);
+  const isLocalhost = apiUrl.hostname === 'localhost';
 
-  document.cookie = `sessionid=${sessionId}; path=/; domain=.${domain}`;
-  document.cookie = `csrftoken=${csrfToken}; path=/; domain=.${domain}`;
+  const cookieDomain = isLocalhost
+      ? 'localhost'
+      : `.${apiUrl.hostname.split('.').slice(-2).join('.')}`;
+
+  document.cookie = `sessionid=${sessionId}; path=/; domain=${cookieDomain}${!isLocalhost ? '; Secure; SameSite=None' : ''}`;
+  document.cookie = `csrftoken=${csrfToken}; path=/; domain=${cookieDomain}${!isLocalhost ? '; Secure; SameSite=None' : ''}`;
 
   const response = await api.get('/lowongan');
   return response.data;
