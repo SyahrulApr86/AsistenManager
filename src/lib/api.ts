@@ -100,14 +100,3 @@ export async function getFinanceData(
   });
   return response.data;
 }
-
-export async function getAllFinanceData(
-    sessionId: string,
-    csrfToken: string
-): Promise<FinanceData[]> {
-  document.cookie = `sessionid=${sessionId}; path=/`;
-  document.cookie = `csrftoken=${csrfToken}; path=/`;
-
-  const response = await api.get('/finance/all');
-  return response.data;
-}

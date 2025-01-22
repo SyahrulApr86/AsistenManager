@@ -1,23 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { DollarSign, Calendar as CalendarIcon, TrendingUp, ArrowDown, ArrowUp, Clock, RefreshCw } from 'lucide-react';
-import { FinanceData, FinanceStats } from '../types/log';
-import { getFinanceData, getAllFinanceData } from '../lib/api';
+import { DollarSign, RefreshCw } from 'lucide-react';
+import { FinanceData } from '../types/log';
+import { getFinanceData } from '../lib/api';
 import Navbar from './shared/Navbar';
 import Footer from './shared/Footer';
 import Table from './shared/Table';
-import StatsCard from './shared/StatsCard';
 import toast from 'react-hot-toast';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Pie } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend);
+
+const STATUS_COLORS = {
+  'tidak disetujui admin': '#EF4444',
+  'disetujui admin': '#10B981',
+  'dilaporkan': '#F59E0B',
+  'diproses': '#3B82F6',
+  'disetujui dosen/TA': '#6366F1',
+  'tidak disetujui dosen/TA': '#DC2626'
+};
 
 export default function FinanceView() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [loadingStats, setLoadingStats] = useState(true);
   const [financeData, setFinanceData] = useState<FinanceData[]>([]);
-  const [allFinanceData, setAllFinanceData] = useState<FinanceData[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [stats, setStats] = useState<FinanceStats | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const months = [
@@ -36,56 +45,24 @@ export default function FinanceView() {
   ];
 
   const years = Array.from(
-    { length: 5 },
-    (_, i) => new Date().getFullYear() - 2 + i
+      { length: new Date().getFullYear() - 2021 + 1 },
+      (_, i) => 2021 + i
   );
 
   const cleanCurrency = (value: string): number => {
     try {
       if (typeof value !== 'string') return 0;
       return parseFloat(
-        value
-          .replace('Rp', '')
-          .replace(/\./g, '')
-          .replace(',00', '')
-          .replace(',', '.')
-          .trim()
+          value
+              .replace('Rp', '')
+              .replace(/\./g, '')
+              .replace(',00', '')
+              .replace(',', '.')
+              .trim()
       );
     } catch {
       return 0;
     }
-  };
-
-  const calculateStats = (data: FinanceData[]): FinanceStats => {
-    const statusTotals: Record<string, number> = {};
-    const monthlyTotals: Record<string, number> = {};
-    let totalAmount = 0;
-
-    data.forEach(entry => {
-      const amount = cleanCurrency(entry.Jumlah_Pembayaran);
-      const status = entry.Status.toLowerCase();
-      const monthKey = `${entry.Bulan}`;
-
-      totalAmount += amount;
-      statusTotals[status] = (statusTotals[status] || 0) + amount;
-      monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + amount;
-    });
-
-    const monthlyAmounts = Object.values(monthlyTotals);
-    const averageMonthly = monthlyAmounts.length > 0
-      ? monthlyAmounts.reduce((a, b) => a + b, 0) / monthlyAmounts.length
-      : 0;
-    const maxMonthly = Math.max(...monthlyAmounts, 0);
-    const minMonthly = Math.min(...monthlyAmounts, 0);
-
-    return {
-      totalAmount,
-      statusTotals,
-      monthlyTotals,
-      averageMonthly,
-      maxMonthly,
-      minMonthly
-    };
   };
 
   const formatCurrency = (amount: number): string => {
@@ -97,6 +74,70 @@ export default function FinanceView() {
     }).format(amount);
   };
 
+  const calculateStatusTotals = (data: FinanceData[]) => {
+    const totals: Record<string, number> = {};
+    let total = 0;
+
+    data.forEach(entry => {
+      const amount = cleanCurrency(entry.Jumlah_Pembayaran);
+      const status = entry.Status.toLowerCase();
+      totals[status] = (totals[status] || 0) + amount;
+      total += amount;
+    });
+
+    return { statusTotals: totals, total };
+  };
+
+  const getChartData = (data: FinanceData[]) => {
+    const { statusTotals, total } = calculateStatusTotals(data);
+    const labels = Object.keys(statusTotals);
+    const values = Object.values(statusTotals);
+    const colors = labels.map(label => STATUS_COLORS[label as keyof typeof STATUS_COLORS] || '#CBD5E1');
+
+    return {
+      labels,
+      datasets: [
+        {
+          data: values,
+          backgroundColor: colors,
+          borderColor: colors,
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'right' as const,
+        labels: {
+          generateLabels: (chart: any) => {
+            const { statusTotals, total } = calculateStatusTotals(financeData);
+            return Object.entries(statusTotals).map(([label, value]) => ({
+              text: `${label} (${((value / total) * 100).toFixed(1)}%) - ${formatCurrency(value)}`,
+              fillStyle: STATUS_COLORS[label as keyof typeof STATUS_COLORS] || '#CBD5E1',
+              strokeStyle: STATUS_COLORS[label as keyof typeof STATUS_COLORS] || '#CBD5E1',
+              lineWidth: 1,
+              hidden: false
+            }));
+          }
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            const value = context.raw;
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = ((value / total) * 100).toFixed(1);
+            return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+          }
+        }
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.sessionId || !user?.csrfToken) {
@@ -106,12 +147,11 @@ export default function FinanceView() {
 
       setLoading(true);
       try {
-        // Fetch current month's data
         const currentData = await getFinanceData(
-          user.sessionId,
-          user.csrfToken,
-          selectedYear,
-          selectedMonth
+            user.sessionId,
+            user.csrfToken,
+            selectedYear,
+            selectedMonth
         );
         setFinanceData(currentData);
       } catch (error) {
@@ -125,25 +165,6 @@ export default function FinanceView() {
     fetchData();
   }, [user, selectedYear, selectedMonth]);
 
-  useEffect(() => {
-    const fetchAllData = async () => {
-      if (!user?.sessionId || !user?.csrfToken) return;
-
-      setLoadingStats(true);
-      try {
-        const allData = await getAllFinanceData(user.sessionId, user.csrfToken);
-        setAllFinanceData(allData);
-        setStats(calculateStats(allData));
-      } catch (error) {
-        console.error('Error fetching all finance data:', error);
-      } finally {
-        setLoadingStats(false);
-      }
-    };
-
-    fetchAllData();
-  }, [user]);
-
   const handleRefresh = async () => {
     if (!user?.sessionId || !user?.csrfToken) {
       toast.error('Session not found');
@@ -153,10 +174,10 @@ export default function FinanceView() {
     setRefreshing(true);
     try {
       const currentData = await getFinanceData(
-        user.sessionId,
-        user.csrfToken,
-        selectedYear,
-        selectedMonth
+          user.sessionId,
+          user.csrfToken,
+          selectedYear,
+          selectedMonth
       );
       setFinanceData(currentData);
       toast.success('Data refreshed successfully');
@@ -175,111 +196,111 @@ export default function FinanceView() {
     { header: 'Hours', key: 'Jumlah_Jam', width: 'w-24', centerHeader: true, centerData: true },
     { header: 'Rate', key: 'Honor_Per_Jam', width: 'w-32', centerHeader: true, centerData: true },
     { header: 'Amount', key: 'Jumlah_Pembayaran', width: 'w-40', centerHeader: true, centerData: true },
-    { header: 'Status', key: 'Status', width: 'w-32', centerHeader: true, centerData: true, render: (value: string) => (
-      <span className={`badge ${
-        value.toLowerCase().includes('dibayar') ? 'badge-green' : 'badge-yellow'
-      }`}>
-        {value}
-      </span>
-    )}
+    {
+      header: 'Status',
+      key: 'Status',
+      width: 'w-32',
+      centerHeader: true,
+      centerData: true,
+      render: (value: string) => (
+          <span className={`badge ${
+              value.toLowerCase().includes('tidak disetujui') ? 'badge-red' :
+                  value.toLowerCase().includes('diproses') ? 'badge-blue' :
+                      value.toLowerCase().includes('disetujui') ? 'badge-green' :
+                          'badge-yellow'
+          }`}>
+          {value}
+        </span>
+      )
+    }
   ];
 
+  const { total } = calculateStatusTotals(financeData);
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-blue-50">
-      <Navbar />
-      <div className="flex-grow pt-16 pb-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="card p-8 mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  Financial Overview
-                </h2>
-                <p className="text-gray-600">
-                  Track your teaching assistant payments
-                </p>
-              </div>
-              <DollarSign className="h-12 w-12 text-green-600" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <StatsCard
-              title="Total Earnings"
-              value={loadingStats ? "Loading..." : formatCurrency(stats?.totalAmount || 0)}
-              icon={DollarSign}
-              iconColor="text-green-600"
-            />
-            <StatsCard
-              title="Average Monthly"
-              value={loadingStats ? "Loading..." : formatCurrency(stats?.averageMonthly || 0)}
-              icon={TrendingUp}
-              iconColor="text-blue-600"
-            />
-            <StatsCard
-              title="Highest Monthly"
-              value={loadingStats ? "Loading..." : formatCurrency(stats?.maxMonthly || 0)}
-              icon={ArrowUp}
-              iconColor="text-green-600"
-            />
-            <StatsCard
-              title="Lowest Monthly"
-              value={loadingStats ? "Loading..." : formatCurrency(stats?.minMonthly || 0)}
-              icon={ArrowDown}
-              iconColor="text-red-600"
-            />
-          </div>
-
-          <div className="card p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-5 w-5 text-indigo-600" />
-                <h3 className="text-xl font-semibold text-gray-900">Payment History</h3>
-              </div>
-              <div className="flex items-center space-x-4">
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="input-field w-32"
-                  disabled={loading}
-                >
-                  {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                  className="input-field w-40"
-                  disabled={loading}
-                >
-                  {months.map(month => (
-                    <option key={month.value} value={month.value}>
-                      {month.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleRefresh}
-                  disabled={loading || refreshing}
-                  className="btn-secondary"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </button>
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-blue-50">
+        <Navbar />
+        <div className="flex-grow pt-16 pb-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="card p-8 mb-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                    Financial Overview
+                  </h2>
+                  <p className="text-gray-600">
+                    Track your teaching assistant payments
+                  </p>
+                </div>
+                <DollarSign className="h-12 w-12 text-green-600" />
               </div>
             </div>
 
-            <Table
-              columns={columns}
-              data={financeData}
-              isLoading={loading}
-              emptyMessage="No payment records found for the selected period"
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+              <div className="lg:col-span-2 card p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900">Payment History</h3>
+                  <div className="flex items-center space-x-4">
+                    <select
+                        value={selectedYear}
+                        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                        className="input-field w-32"
+                        disabled={loading}
+                    >
+                      {years.map(year => (
+                          <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                    <select
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                        className="input-field w-40"
+                        disabled={loading}
+                    >
+                      {months.map(month => (
+                          <option key={month.value} value={month.value}>
+                            {month.label}
+                          </option>
+                      ))}
+                    </select>
+                    <button
+                        onClick={handleRefresh}
+                        disabled={loading || refreshing}
+                        className="btn-secondary"
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </button>
+                  </div>
+                </div>
+
+                <Table
+                    columns={columns}
+                    data={financeData}
+                    isLoading={loading}
+                    emptyMessage="No payment records found for the selected period"
+                />
+              </div>
+
+              <div className="card p-8">
+                <div className="mb-4">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Status Breakdown</h3>
+                  <p className="text-gray-600">Total: {formatCurrency(total)}</p>
+                </div>
+                {financeData.length > 0 ? (
+                    <div className="relative">
+                      <Pie data={getChartData(financeData)} options={chartOptions} />
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-center h-64 text-gray-500">
+                      No data available
+                    </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
   );
 }
