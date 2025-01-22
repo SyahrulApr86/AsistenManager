@@ -14,8 +14,8 @@ const api = axios.create({
 });
 
 export async function getLowongan(sessionId: string, csrfToken: string): Promise<Lowongan[]> {
-  document.cookie = `sessionid=${sessionId}; path=/; Secure; SameSite=None`;
-  document.cookie = `csrftoken=${csrfToken}; path=/; Secure; SameSite=None`;
+  document.cookie = `sessionid=${sessionId}; path=/; domain=.rul.blue`;
+  document.cookie = `csrftoken=${csrfToken}; path=/; domain=.rul.blue`;
 
   const response = await api.get('/lowongan');
   return response.data;
