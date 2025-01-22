@@ -46,20 +46,20 @@ export default function FinanceView() {
   ];
 
   const years = Array.from(
-      { length: new Date().getFullYear() - 2021 + 1 },
-      (_, i) => 2021 + i
+    { length: new Date().getFullYear() - 2021 + 1 },
+    (_, i) => 2021 + i
   );
 
   const cleanCurrency = (value: string): number => {
     try {
       if (typeof value !== 'string') return 0;
       return parseFloat(
-          value
-              .replace('Rp', '')
-              .replace(/\./g, '')
-              .replace(',00', '')
-              .replace(',', '.')
-              .trim()
+        value
+          .replace('Rp', '')
+          .replace(/\./g, '')
+          .replace(',00', '')
+          .replace(',', '.')
+          .trim()
       );
     } catch {
       return 0;
@@ -92,7 +92,7 @@ export default function FinanceView() {
 
   const getChartData = (data: FinanceData[]) => {
     const { statusTotals, total } = calculateStatusTotals(data);
-
+    
     // Sort statuses by the process flow
     const statusOrder = [
       'dilaporkan',
@@ -102,7 +102,7 @@ export default function FinanceView() {
       'tidak disetujui admin',
       'tidak disetujui dosen/TA'
     ];
-
+    
     const sortedStatuses = Object.keys(statusTotals).sort((a, b) => {
       return statusOrder.indexOf(a) - statusOrder.indexOf(b);
     });
@@ -141,16 +141,16 @@ export default function FinanceView() {
               'tidak disetujui admin',
               'tidak disetujui dosen/TA'
             ];
-
+            
             return Object.keys(statusTotals)
-                .sort((a, b) => statusOrder.indexOf(a) - statusOrder.indexOf(b))
-                .map(label => ({
-                  text: `${label} (${((statusTotals[label] / total) * 100).toFixed(1)}%)`,
-                  fillStyle: STATUS_COLORS[label as keyof typeof STATUS_COLORS],
-                  strokeStyle: STATUS_COLORS[label as keyof typeof STATUS_COLORS],
-                  lineWidth: 1,
-                  hidden: false
-                }));
+              .sort((a, b) => statusOrder.indexOf(a) - statusOrder.indexOf(b))
+              .map(label => ({
+                text: `${label} (${((statusTotals[label] / total) * 100).toFixed(1)}%)`,
+                fillStyle: STATUS_COLORS[label as keyof typeof STATUS_COLORS],
+                strokeStyle: STATUS_COLORS[label as keyof typeof STATUS_COLORS],
+                lineWidth: 1,
+                hidden: false
+              }));
           },
           font: {
             size: 12
@@ -194,12 +194,12 @@ export default function FinanceView() {
       setLoading(true);
       try {
         const currentData = await getFinanceData(
-            user.sessionId,
-            user.csrfToken,
-            selectedYear,
-            selectedMonth
+          user.sessionId,
+          user.csrfToken,
+          selectedYear,
+          selectedMonth
         );
-
+        
         // Filter out entries with empty status
         const validData = currentData.filter(entry => entry.Status.trim() !== '');
         setFinanceData(validData);
@@ -223,10 +223,10 @@ export default function FinanceView() {
     setRefreshing(true);
     try {
       const currentData = await getFinanceData(
-          user.sessionId,
-          user.csrfToken,
-          selectedYear,
-          selectedMonth
+        user.sessionId,
+        user.csrfToken,
+        selectedYear,
+        selectedMonth
       );
       const validData = currentData.filter(entry => entry.Status.trim() !== '');
       setFinanceData(validData);
@@ -255,7 +255,7 @@ export default function FinanceView() {
       render: (value: string) => {
         const status = value.toLowerCase();
         let badgeClass = 'badge-yellow'; // Default for 'dilaporkan'
-
+        
         if (status === 'diproses') {
           badgeClass = 'badge-green';
         } else if (status.includes('disetujui')) {
@@ -263,9 +263,9 @@ export default function FinanceView() {
         } else if (status.includes('tidak disetujui')) {
           badgeClass = 'badge-red';
         }
-
+        
         return (
-            <span className={`badge ${badgeClass}`}>
+          <span className={`badge ${badgeClass}`}>
             {value}
           </span>
         );
@@ -276,87 +276,87 @@ export default function FinanceView() {
   const { total } = calculateStatusTotals(financeData);
 
   return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-blue-50">
-        <Navbar />
-        <div className="flex-grow pt-16 pb-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="card p-8 mb-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                    Financial Overview
-                  </h2>
-                  <p className="text-gray-600">
-                    Track your teaching assistant payments
-                  </p>
-                </div>
-                <DollarSign className="h-12 w-12 text-green-600" />
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-blue-50">
+      <Navbar />
+      <div className="flex-grow pt-16 pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="card p-8 mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Financial Overview
+                </h2>
+                <p className="text-gray-600">
+                  Track your teaching assistant payments
+                </p>
+              </div>
+              <DollarSign className="h-12 w-12 text-green-600" />
+            </div>
+          </div>
+
+          <div className="card p-8 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Status Breakdown</h3>
+                <p className="text-gray-600">Total: {formatCurrency(total)}</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="input-field w-32"
+                  disabled={loading}
+                >
+                  {years.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                  className="input-field w-40"
+                  disabled={loading}
+                >
+                  {months.map(month => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleRefresh}
+                  disabled={loading || refreshing}
+                  className="btn-secondary"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
               </div>
             </div>
 
-            <div className="card p-8 mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Status Breakdown</h3>
-                  <p className="text-gray-600">Total: {formatCurrency(total)}</p>
+            <div className="h-[400px] mb-8">
+              {financeData.length > 0 ? (
+                <Pie data={getChartData(financeData)} options={chartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  No data available
                 </div>
-                <div className="flex items-center space-x-4">
-                  <select
-                      value={selectedYear}
-                      onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                      className="input-field w-32"
-                      disabled={loading}
-                  >
-                    {years.map(year => (
-                        <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
-                  <select
-                      value={selectedMonth}
-                      onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                      className="input-field w-40"
-                      disabled={loading}
-                  >
-                    {months.map(month => (
-                        <option key={month.value} value={month.value}>
-                          {month.label}
-                        </option>
-                    ))}
-                  </select>
-                  <button
-                      onClick={handleRefresh}
-                      disabled={loading || refreshing}
-                      className="btn-secondary"
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </button>
-                </div>
-              </div>
+              )}
+            </div>
 
-              <div className="h-[400px] mb-8">
-                {financeData.length > 0 ? (
-                    <Pie data={getChartData(financeData)} options={chartOptions} />
-                ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      No data available
-                    </div>
-                )}
-              </div>
-
-              <div className="mt-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Payment Details</h3>
-                <Table
-                    columns={columns}
-                    data={financeData}
-                    isLoading={loading}
-                    emptyMessage="No payment records found for the selected period"
-                />
-              </div>
+            <div className="mt-8">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">Payment Details</h3>
+              <Table
+                columns={columns}
+                data={financeData}
+                isLoading={loading}
+                emptyMessage="No payment records found for the selected period"
+              />
             </div>
           </div>
         </div>
-        <Footer />
       </div>
+      <Footer />
+    </div>
   );
 }

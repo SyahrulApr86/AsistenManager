@@ -357,23 +357,23 @@ app.post('/api/finance', async (req, res) => {
     if (isRecentMonth) {
       const keuangan_url = "https://siasisten.cs.ui.ac.id/keuangan/listPembayaranPerAsisten";
       const response = await axios.post(
-          keuangan_url,
-          new URLSearchParams({
-            csrfmiddlewaretoken: csrftoken,
-            tahun: year.toString(),
-            bulan: month.toString(),
-            username: decodedUsername,
-            statusid: "-1"
-          }).toString(),
-          {
-            headers: {
-              ...COMMON_HEADERS,
-              "Cookie": `csrftoken=${csrftoken}; sessionid=${sessionid}`,
-              "Content-Type": "application/x-www-form-urlencoded",
-              "Origin": "https://siasisten.cs.ui.ac.id",
-              "Referer": keuangan_url
-            }
+        keuangan_url,
+        new URLSearchParams({
+          csrfmiddlewaretoken: csrftoken,
+          tahun: year.toString(),
+          bulan: month.toString(),
+          username: decodedUsername,
+          statusid: "-1"
+        }).toString(),
+        {
+          headers: {
+            ...COMMON_HEADERS,
+            "Cookie": `csrftoken=${csrftoken}; sessionid=${sessionid}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Origin": "https://siasisten.cs.ui.ac.id",
+            "Referer": keuangan_url
           }
+        }
       );
 
       const root = parse(response.data);
@@ -401,20 +401,20 @@ app.post('/api/finance', async (req, res) => {
 
               // Update or insert into database
               const { error: upsertError } = await supabase
-                  .from('finance_data')
-                  .upsert({
-                    username: decodedUsername,
-                    year,
-                    month,
-                    npm: entry.NPM,
-                    asisten: entry.Asisten,
-                    bulan: entry.Bulan,
-                    mata_kuliah: entry.Mata_Kuliah,
-                    jumlah_jam: entry.Jumlah_Jam,
-                    honor_per_jam: entry.Honor_Per_Jam,
-                    jumlah_pembayaran: entry.Jumlah_Pembayaran,
-                    status: entry.Status
-                  });
+                .from('finance_data')
+                .upsert({
+                  username: decodedUsername,
+                  year,
+                  month,
+                  npm: entry.NPM,
+                  asisten: entry.Asisten,
+                  bulan: entry.Bulan,
+                  mata_kuliah: entry.Mata_Kuliah,
+                  jumlah_jam: entry.Jumlah_Jam,
+                  honor_per_jam: entry.Honor_Per_Jam,
+                  jumlah_pembayaran: entry.Jumlah_Pembayaran,
+                  status: entry.Status
+                });
 
               if (upsertError) {
                 console.error('Error upserting data:', upsertError);
@@ -427,20 +427,20 @@ app.post('/api/finance', async (req, res) => {
       // If no data found, store an empty record
       if (data.length === 0) {
         const { error: emptyError } = await supabase
-            .from('finance_data')
-            .upsert({
-              username: decodedUsername,
-              year,
-              month,
-              npm: '',
-              asisten: '',
-              bulan: '',
-              mata_kuliah: '',
-              jumlah_jam: '',
-              honor_per_jam: '',
-              jumlah_pembayaran: '',
-              status: ''
-            });
+          .from('finance_data')
+          .upsert({
+            username: decodedUsername,
+            year,
+            month,
+            npm: '',
+            asisten: '',
+            bulan: '',
+            mata_kuliah: '',
+            jumlah_jam: '',
+            honor_per_jam: '',
+            jumlah_pembayaran: '',
+            status: ''
+          });
 
         if (emptyError) {
           console.error('Error storing empty record:', emptyError);
@@ -451,11 +451,11 @@ app.post('/api/finance', async (req, res) => {
     } else {
       // For older months, check database first
       const { data: dbData, error: dbError } = await supabase
-          .from('finance_data')
-          .select('*')
-          .eq('username', decodedUsername)
-          .eq('year', year)
-          .eq('month', month);
+        .from('finance_data')
+        .select('*')
+        .eq('username', decodedUsername)
+        .eq('year', year)
+        .eq('month', month);
 
       if (dbError) {
         throw new Error('Database error');
@@ -465,23 +465,23 @@ app.post('/api/finance', async (req, res) => {
       if (!dbData || dbData.length === 0 || dbData.every(record => record.status === '')) {
         const keuangan_url = "https://siasisten.cs.ui.ac.id/keuangan/listPembayaranPerAsisten";
         const response = await axios.post(
-            keuangan_url,
-            new URLSearchParams({
-              csrfmiddlewaretoken: csrftoken,
-              tahun: year.toString(),
-              bulan: month.toString(),
-              username: decodedUsername,
-              statusid: "-1"
-            }).toString(),
-            {
-              headers: {
-                ...COMMON_HEADERS,
-                "Cookie": `csrftoken=${csrftoken}; sessionid=${sessionid}`,
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Origin": "https://siasisten.cs.ui.ac.id",
-                "Referer": keuangan_url
-              }
+          keuangan_url,
+          new URLSearchParams({
+            csrfmiddlewaretoken: csrftoken,
+            tahun: year.toString(),
+            bulan: month.toString(),
+            username: decodedUsername,
+            statusid: "-1"
+          }).toString(),
+          {
+            headers: {
+              ...COMMON_HEADERS,
+              "Cookie": `csrftoken=${csrftoken}; sessionid=${sessionid}`,
+              "Content-Type": "application/x-www-form-urlencoded",
+              "Origin": "https://siasisten.cs.ui.ac.id",
+              "Referer": keuangan_url
             }
+          }
         );
 
         const root = parse(response.data);
@@ -509,20 +509,20 @@ app.post('/api/finance', async (req, res) => {
 
                 // Update or insert into database
                 const { error: upsertError } = await supabase
-                    .from('finance_data')
-                    .upsert({
-                      username: decodedUsername,
-                      year,
-                      month,
-                      npm: entry.NPM,
-                      asisten: entry.Asisten,
-                      bulan: entry.Bulan,
-                      mata_kuliah: entry.Mata_Kuliah,
-                      jumlah_jam: entry.Jumlah_Jam,
-                      honor_per_jam: entry.Honor_Per_Jam,
-                      jumlah_pembayaran: entry.Jumlah_Pembayaran,
-                      status: entry.Status
-                    });
+                  .from('finance_data')
+                  .upsert({
+                    username: decodedUsername,
+                    year,
+                    month,
+                    npm: entry.NPM,
+                    asisten: entry.Asisten,
+                    bulan: entry.Bulan,
+                    mata_kuliah: entry.Mata_Kuliah,
+                    jumlah_jam: entry.Jumlah_Jam,
+                    honor_per_jam: entry.Honor_Per_Jam,
+                    jumlah_pembayaran: entry.Jumlah_Pembayaran,
+                    status: entry.Status
+                  });
 
                 if (upsertError) {
                   console.error('Error upserting data:', upsertError);
@@ -535,20 +535,20 @@ app.post('/api/finance', async (req, res) => {
         // If no data found, store an empty record
         if (data.length === 0) {
           const { error: emptyError } = await supabase
-              .from('finance_data')
-              .upsert({
-                username: decodedUsername,
-                year,
-                month,
-                npm: '',
-                asisten: '',
-                bulan: '',
-                mata_kuliah: '',
-                jumlah_jam: '',
-                honor_per_jam: '',
-                jumlah_pembayaran: '',
-                status: ''
-              });
+            .from('finance_data')
+            .upsert({
+              username: decodedUsername,
+              year,
+              month,
+              npm: '',
+              asisten: '',
+              bulan: '',
+              mata_kuliah: '',
+              jumlah_jam: '',
+              honor_per_jam: '',
+              jumlah_pembayaran: '',
+              status: ''
+            });
 
           if (emptyError) {
             console.error('Error storing empty record:', emptyError);
@@ -559,17 +559,17 @@ app.post('/api/finance', async (req, res) => {
       } else {
         // Return only non-empty records
         const validData = dbData
-            .filter(record => record.status !== '')
-            .map(record => ({
-              NPM: record.npm,
-              Asisten: record.asisten,
-              Bulan: record.bulan,
-              Mata_Kuliah: record.mata_kuliah,
-              Jumlah_Jam: record.jumlah_jam,
-              Honor_Per_Jam: record.honor_per_jam,
-              Jumlah_Pembayaran: record.jumlah_pembayaran,
-              Status: record.status
-            }));
+          .filter(record => record.status !== '')
+          .map(record => ({
+            NPM: record.npm,
+            Asisten: record.asisten,
+            Bulan: record.bulan,
+            Mata_Kuliah: record.mata_kuliah,
+            Jumlah_Jam: record.jumlah_jam,
+            Honor_Per_Jam: record.honor_per_jam,
+            Jumlah_Pembayaran: record.jumlah_pembayaran,
+            Status: record.status
+          }));
 
         res.json(validData);
       }

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, CheckCircle, History, Eye, ClipboardList, Calendar as CalendarIcon, X } from 'lucide-react';
+import { BookOpen, CheckCircle, History, Eye, ClipboardList, Calendar as CalendarIcon, X, AlertTriangle } from 'lucide-react';
 import { Lowongan, Log } from '../types/log';
 import toast from 'react-hot-toast';
 import { getLowongan, getLogs } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { findOverlappingLogs, OverlapInfo } from '../lib/utils';
 import Navbar from './shared/Navbar';
 import Footer from './shared/Footer';
 import Table from './shared/Table';
@@ -22,6 +23,8 @@ export default function Dashboard() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [allLogs, setAllLogs] = useState<Log[]>([]);
   const [selectedLog, setSelectedLog] = useState<Log | null>(null);
+  const [showOverlapModal, setShowOverlapModal] = useState(false);
+  const [overlappingLogs, setOverlappingLogs] = useState<OverlapInfo[]>([]);
 
   useEffect(() => {
     if (!user?.sessionId || !user?.csrfToken) {
@@ -103,6 +106,37 @@ export default function Dashboard() {
       )}
   ];
 
+
+  const handleCheckOverlap = async () => {
+    if (!user?.sessionId || !user?.csrfToken) {
+      toast.error('Session not found');
+      return;
+    }
+
+    try {
+      // Get logs from all active positions
+      const logs: Log[] = [];
+      for (const vacancy of activeVacancies) {
+        const { logs: vacancyLogs } = await getLogs(user.sessionId, user.csrfToken, vacancy.LogID);
+        logs.push(...vacancyLogs.map(log => ({
+          ...log,
+          'Mata Kuliah': vacancy['Mata Kuliah']
+        })));
+      }
+
+      const overlaps = findOverlappingLogs(logs);
+      setOverlappingLogs(overlaps);
+      setShowOverlapModal(true);
+
+      if (overlaps.length === 0) {
+        toast.success('No overlapping logs found!');
+      }
+    } catch (error) {
+      console.error('Error checking overlaps:', error);
+      toast.error('Failed to check for overlapping logs');
+    }
+  };
+
   return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-blue-50">
         <Navbar />
@@ -148,6 +182,16 @@ export default function Dashboard() {
                 </div>
                 <Calendar2 className="h-8 w-8 text-indigo-600"/>
               </button>
+              <button
+                  onClick={handleCheckOverlap}
+                  className="card p-6 hover:shadow-xl transition-shadow duration-300 flex items-center justify-between"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Check Schedule</p>
+                  <p className="text-2xl font-bold text-orange-600">Overlaps</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-orange-600"/>
+              </button>
             </div>
 
             <div className="card p-8 mb-8">
@@ -171,7 +215,7 @@ export default function Dashboard() {
             <div className="card p-8 mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-2">
-                  <CalendarIcon className="h-5 w-5 text-indigo-600" />
+                  <CalendarIcon className="h-5 w-5 text-indigo-600"/>
                   <h3 className="text-xl font-semibold text-gray-900">Calendar View</h3>
                 </div>
                 <button
@@ -193,7 +237,7 @@ export default function Dashboard() {
             <div className="card p-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-2">
-                  <History className="h-5 w-5 text-gray-600" />
+                  <History className="h-5 w-5 text-gray-600"/>
                   <h3 className="text-xl font-semibold text-gray-900">Past Positions</h3>
                 </div>
                 <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
@@ -210,6 +254,74 @@ export default function Dashboard() {
           </div>
         </div>
         <Footer />
+
+        {/* Overlap Modal */}
+        {showOverlapModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl">
+                <div className="flex items-center justify-between p-6 border-b">
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Schedule Overlaps
+                  </h3>
+                  <button
+                      onClick={() => setShowOverlapModal(false)}
+                      className="text-gray-400 hover:text-gray-500 transition-colors"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="p-6">
+                  {overlappingLogs.length === 0 ? (
+                      <div className="text-center py-8">
+                        <AlertTriangle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                        <p className="text-lg font-medium text-gray-900">No Overlaps Found</p>
+                        <p className="text-gray-500">All your schedules are properly arranged.</p>
+                      </div>
+                  ) : (
+                      <div className="space-y-6">
+                        <p className="text-sm text-gray-500">
+                          Found {overlappingLogs.length} overlapping schedule{overlappingLogs.length > 1 ? 's' : ''}.
+                        </p>
+                        {overlappingLogs.map((overlap, index) => (
+                            <div key={index} className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="font-medium text-orange-800 mb-2">Schedule 1</h4>
+                                  <div className="space-y-2">
+                                    <p className="text-sm"><span className="font-medium">Course:</span> {overlap.log1.course}</p>
+                                    <p className="text-sm"><span className="font-medium">Date:</span> {overlap.log1.date}</p>
+                                    <p className="text-sm"><span className="font-medium">Time:</span> {overlap.log1.startTime} - {overlap.log1.endTime}</p>
+                                    <p className="text-sm"><span className="font-medium">Description:</span> {overlap.log1.description}</p>
+                                  </div>
+                                </div>
+                                <div>
+                                  <h4 className="font-medium text-orange-800 mb-2">Schedule 2</h4>
+                                  <div className="space-y-2">
+                                    <p className="text-sm"><span className="font-medium">Course:</span> {overlap.log2.course}</p>
+                                    <p className="text-sm"><span className="font-medium">Date:</span> {overlap.log2.date}</p>
+                                    <p className="text-sm"><span className="font-medium">Time:</span> {overlap.log2.startTime} - {overlap.log2.endTime}</p>
+                                    <p className="text-sm"><span className="font-medium">Description:</span> {overlap.log2.description}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                        ))}
+                      </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end space-x-4 p-6 border-t">
+                  <button
+                      onClick={() => setShowOverlapModal(false)}
+                      className="btn-primary"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+        )}
 
         {/* Log Details Modal */}
         {selectedLog && (

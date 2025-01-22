@@ -28,10 +28,10 @@ export async function getLogs(sessionId: string, csrfToken: string, logId: strin
 }
 
 export async function createLog(
-    sessionId: string,
-    csrfToken: string,
-    createLogId: string,
-    data: LogFormData
+  sessionId: string,
+  csrfToken: string,
+  createLogId: string,
+  data: LogFormData
 ): Promise<void> {
   // Extract the ID from the createLogId (which might be a full URL path)
   const id = createLogId.split('/').filter(Boolean).pop();
@@ -52,10 +52,10 @@ export async function createLog(
 }
 
 export async function updateLog(
-    sessionId: string,
-    csrfToken: string,
-    logId: string,
-    data: LogFormData
+  sessionId: string,
+  csrfToken: string,
+  logId: string,
+  data: LogFormData
 ): Promise<void> {
   const response = await api.put(`/logs/update/${logId}`, {
     sessionId,
@@ -69,9 +69,9 @@ export async function updateLog(
 }
 
 export async function deleteLog(
-    sessionId: string,
-    csrfToken: string,
-    logId: string
+  sessionId: string,
+  csrfToken: string,
+  logId: string
 ): Promise<void> {
   const response = await api.delete(`/logs/delete/${logId}`, {
     data: {
@@ -86,10 +86,10 @@ export async function deleteLog(
 }
 
 export async function getFinanceData(
-    sessionId: string,
-    csrfToken: string,
-    year: number,
-    month: number
+  sessionId: string,
+  csrfToken: string,
+  year: number,
+  month: number
 ): Promise<FinanceData[]> {
   document.cookie = `sessionid=${sessionId}; path=/`;
   document.cookie = `csrftoken=${csrfToken}; path=/`;
