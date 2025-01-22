@@ -21,11 +21,28 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+    : [
+      'http://localhost:5173'
+    ]; // Fallback jika tidak ada di .env
+
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc)
+    if (!origin) return callback(null, true);
+
+    // Check jika origin ada di whitelist
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   exposedHeaders: ['set-cookie']
 }));
+
 app.use(express.json());
 
 const SIASISTEN_URL = 'https://siasisten.cs.ui.ac.id';
@@ -580,6 +597,6 @@ app.post('/api/finance', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port}`);
 });
