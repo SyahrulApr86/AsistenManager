@@ -15,3 +15,10 @@ services:
     volumes:
       - /app/node_modules
     command: npm run dev
+    networks:
+      - traefik-network
+
+networks:
+  traefik-network:
+    name: traefik-network
+    driver: bridge
