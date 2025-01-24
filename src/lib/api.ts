@@ -13,14 +13,13 @@ const api = axios.create({
   }
 });
 
+const apiUrl = new URL(import.meta.env.VITE_API_URL);
+const isLocalhost = apiUrl.hostname === 'localhost';
+const cookieDomain = isLocalhost
+    ? 'localhost'
+    : `.${apiUrl.hostname.split('.').slice(-2).join('.')}`;
+
 export async function getLowongan(sessionId: string, csrfToken: string): Promise<Lowongan[]> {
-  const apiUrl = new URL(import.meta.env.VITE_API_URL);
-  const isLocalhost = apiUrl.hostname === 'localhost';
-
-  const cookieDomain = isLocalhost
-      ? 'localhost'
-      : `.${apiUrl.hostname.split('.').slice(-2).join('.')}`;
-
   document.cookie = `sessionid=${sessionId}; path=/; domain=${cookieDomain}${!isLocalhost ? '; Secure; SameSite=None' : ''}`;
   document.cookie = `csrftoken=${csrfToken}; path=/; domain=${cookieDomain}${!isLocalhost ? '; Secure; SameSite=None' : ''}`;
 
@@ -29,8 +28,8 @@ export async function getLowongan(sessionId: string, csrfToken: string): Promise
 }
 
 export async function getLogs(sessionId: string, csrfToken: string, logId: string): Promise<{ logs: Log[], createLogLink: string | null }> {
-  document.cookie = `sessionid=${sessionId}; path=/`;
-  document.cookie = `csrftoken=${csrfToken}; path=/`;
+  document.cookie = `sessionid=${sessionId}; path=/; domain=${cookieDomain}${!isLocalhost ? '; Secure; SameSite=None' : ''}`;
+  document.cookie = `csrftoken=${csrfToken}; path=/; domain=${cookieDomain}${!isLocalhost ? '; Secure; SameSite=None' : ''}`;
 
   const response = await api.get(`/logs/${logId}`);
   return response.data;
@@ -100,8 +99,8 @@ export async function getFinanceData(
   year: number,
   month: number
 ): Promise<FinanceData[]> {
-  document.cookie = `sessionid=${sessionId}; path=/`;
-  document.cookie = `csrftoken=${csrfToken}; path=/`;
+  document.cookie = `sessionid=${sessionId}; path=/; domain=${cookieDomain}${!isLocalhost ? '; Secure; SameSite=None' : ''}`;
+  document.cookie = `csrftoken=${csrfToken}; path=/; domain=${cookieDomain}${!isLocalhost ? '; Secure; SameSite=None' : ''}`;
 
   const response = await api.post('/finance', {
     year,
